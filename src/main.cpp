@@ -1,5 +1,7 @@
 #include "Arduino.h"
-#include <avr/pgmspace.h>
+//#include <avr/pgmspace.h>
+
+#define SERIAL_TX_BUFFER_SIZE 256
 
 #include <SPI.h>
 
@@ -226,7 +228,7 @@ DSERIAL.println(F("Regular SD Card\n"));
 
   //Initialize the SdCard.
 //DSERIALprintln(F("About to initialize SdCard"));
-  if(!sd.begin(SD_SEL, SPI_FULL_SPEED)) sd.initErrorHalt(&DSERIAL);
+  if(!sd.begin(SD_SEL, SPI_HALF_SPEED)) sd.initErrorHalt(&DSERIAL);
   // depending upon your SdCard environment, SPI_HALF_SPEED may work better.
 //DSERIALprintln(F("About to change directory"));
   if(!sd.chdir((const char *)("/"))) sd.errorHalt(F("sd.chdir"));
