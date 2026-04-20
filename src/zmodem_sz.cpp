@@ -809,7 +809,7 @@ void saybibi(void)
     case TIMEOUT:
       return;
     }
-    if (now - millis() > 1000) {
+    if (millis() - now > 1000) {
       now = millis();
       Serial.println("in saybibi");
     }
