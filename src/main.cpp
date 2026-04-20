@@ -433,7 +433,9 @@ void loop(void)
       ZSERIAL.flush();
       sendzrqinit();
       delay(200);
-      wcs(param);
+      Serial.print("wcs: ");
+      Serial.println(wcs(param));
+      Serial.print("bibi: ");
       saybibi();
       fout.close();
     }

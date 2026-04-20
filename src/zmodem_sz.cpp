@@ -797,6 +797,7 @@ void sendzrqinit(void)
 void saybibi(void)
 {
   for (;;) {
+    unsigned long now = millis();
     stohdr(0L);             /* CAF Was zsbhdr - minor change */
     zshhdr(ZFIN, Txhdr);    /*  to make debugging easier */
     switch (zgethdr(Rxhdr, 0)) {
@@ -807,6 +808,9 @@ void saybibi(void)
     case ZCAN:
     case TIMEOUT:
       return;
+    }
+    if (now - millis() > 1000) {
+      Serial.println("in saybibi");
     }
   }
 }
