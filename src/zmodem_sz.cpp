@@ -796,8 +796,8 @@ void sendzrqinit(void)
 /* Say "bibi" to the receiver, try to do it cleanly */
 void saybibi(void)
 {
+  static unsigned long now = millis();
   for (;;) {
-    unsigned long now = millis();
     stohdr(0L);             /* CAF Was zsbhdr - minor change */
     zshhdr(ZFIN, Txhdr);    /*  to make debugging easier */
     switch (zgethdr(Rxhdr, 0)) {
@@ -810,6 +810,7 @@ void saybibi(void)
       return;
     }
     if (now - millis() > 1000) {
+      now = millis();
       Serial.println("in saybibi");
     }
   }
