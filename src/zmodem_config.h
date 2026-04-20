@@ -24,9 +24,11 @@
 // debugging output to DSERIAL is removed
 //#define ZSERIAL Serial3
 #define ZSERIAL Serial
+#include "Arduino.h"
 
 // Dylan (monte_carlo_ecm, bitflipper, etc.) - Adjust the baud rate to suit your board and needs
-#define ZMODEM_SPEED 115200
+// #define ZMODEM_SPEED 115200
+#define ZMODEM_SPEED 9600
 
 // Dylan (monte_carlo_ecm, bitflipper, etc.) - For smaller boards (32K flash, 2K RAM) it may only
 // be possible to have only one or some of the following 3 features enabled at a time:  1) File manager
