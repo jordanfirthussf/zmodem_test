@@ -135,7 +135,7 @@ void zsbhdr(int type, char *hdr)
     int n;
     UNSL long crc;
   
-    xsendline(ZBIN32);  
+    xsendline(ZBIN32);
     zsendline(type);
     crc = 0xFFFFFFFFL; 
     crc = UPDC32(type, crc);
@@ -244,14 +244,17 @@ void zsdata(char *buf,int length,int frameend)
       crc >>= 8;
     }
   } else {
+    // Serial.print("not crc32 "); delay(5); // good
     unsigned short crc;
     
     crc = 0;
     for (;--length >= 0; ++buf) {
-      zsendline(*buf); 
+      zsendline(*buf);
+
       crc = updcrc((0377 & *buf), crc);
     }
-    xsendline(ZDLE); 
+
+    xsendline(ZDLE);
     xsendline(frameend);
     crc = updcrc(frameend, crc);
 
@@ -653,7 +656,7 @@ int zrhhdr(char *hdr)
   sendline(digits[(c)&0xF]);
 } */
 
-PROGMEM static const char digits[17] = "0123456789abcdef";
+static constexpr char digits[17] = "0123456789abcdef";
 
 void zputhex(int c)
 {
@@ -669,7 +672,7 @@ void zputhex(int c)
  * Send character c with ZMODEM escape sequence encoding.
  *  Escape XON, XOFF. Escape CR following @ (Telenet net escape)
  */
-int zsendline2(int c)
+void zsendline2(int c)
 {
 
   /* Quick check for non control characters */
@@ -681,17 +684,17 @@ int zsendline2(int c)
       xsendline(ZDLE);
       xsendline (lastsent = (c ^= 0100));
       break;
-    case 015:
-    case 0215:
+    case 015: // CR
+    case 0215: //
       if (!Zctlesc && (lastsent & 0177) != '@')
         goto sendit;
       /* **** FALL THRU TO **** */
-    case 020:
-    case 021:
-    case 023:
-    case 0220:
-    case 0221:
-    case 0223:
+    case 020: // DLE
+    case 021: // DC1
+    case 023: // DC3
+    case 0220: // hex 8D
+    case 0221: // '
+    case 0223: // "
       xsendline(ZDLE);
       c ^= 0100;
 sendit:

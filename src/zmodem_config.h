@@ -1,5 +1,4 @@
-#ifndef ZMODEM_CONFIG_H
-#define ZMODEM_CONFIG_H
+#pragma once
 
 #define Progname F("Arduino ZModem V3.0")
 
@@ -13,14 +12,27 @@
 #ifndef SFMP3_SHIELD
 // Make sure you set this correctly to define the pin where you have connected your SDCard's
 // CS pin!
-#define SD_SEL 5
+#define SD_SEL 5 // Thing Plus C
+// #define SD_SEL 21 // XIAO ESP32S3
 #endif
 
 // Serial output for debugging info
-#define DSERIAL Serial
+// #include <HardwareSerial.h>
+// #define DSERIAL Xbee
+// HardwareSerial DSERIAL(2);
+
+#define SEPARATE_SERIALS // comment out if DSERIAL and XSERIAL are the same
+
+#ifdef SEPARATE_SERIALS
+	#include <HardwareSerial.h>
+inline HardwareSerial DSERIAL(2);
+#else
+	#define DSERIAL Serial
+#endif
 
 // The Serial port for the Zmodem connection
 // must not be the same as DSERIAL unless all
+
 // debugging output to DSERIAL is removed
 //#define ZSERIAL Serial3
 #define ZSERIAL Serial
@@ -47,8 +59,5 @@
 
 // Uncomment the following macro to build a version with RZ enabled
 
-#define ARDUINO_SMALL_MEMORY_INCLUDE_RZ
-
-
-#endif
+// #define ARDUINO_SMALL_MEMORY_INCLUDE_RZ
 
