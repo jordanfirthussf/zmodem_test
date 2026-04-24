@@ -2,19 +2,8 @@
 
 #define Progname F("Arduino ZModem V3.0")
 
-// Dylan (monte_carlo_ecm, bitflipper, etc.) - The SparkFun MP3 shield (which contains an SDCard)
-// doesn't operate properly with the SDFat library (SPI related?) unless the MP3 library is
-// initialized as well.  If you are using a SparkFun MP3 shield as your SDCard interface,
-// the following macro must be defined.  Otherwise, comment it out.
-
-//#define SFMP3_SHIELD
-
-#ifndef SFMP3_SHIELD
-// Make sure you set this correctly to define the pin where you have connected your SDCard's
-// CS pin!
 #define SD_SEL 5 // Thing Plus C
 // #define SD_SEL 21 // XIAO ESP32S3
-#endif
 
 /*
  * can function with
@@ -28,7 +17,7 @@
  **/
 
 
-#define SEPARATE_DEBUG_SERIAL 1 // comment out if DSERIAL and ZSERIAL are the same
+// #define SEPARATE_DEBUG_SERIAL 1 // comment out if DSERIAL and ZSERIAL are the same
 
 	#ifdef SEPARATE_DEBUG_SERIAL
 		#include <HardwareSerial.h>
