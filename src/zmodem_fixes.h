@@ -18,7 +18,6 @@ From: http://stackoverflow.com/questions/2607853/why-prototype-is-used-header-fi
 
 extern SdFat sd;
 
-#include <string.h>
 
 // Dylan (monte_carlo_ecm, bitflipper, etc.) - changed serial read/write to macros to try to squeeze 
 // out higher speed
@@ -29,10 +28,6 @@ extern SdFat sd;
 #define readline(timeout) ({ byte _c; ZSERIAL.readBytes(&_c, 1) > 0 ? _c : TIMEOUT; })
 int zdlread2(int);
 #define zdlread(void) ({ int _z; ((_z = readline(Rxtimeout)) & 0140) ? _z : zdlread2(_z); })
-//#define sendline(_c) ZSERIAL.write(char(_c))
-// #define sendline(_c) ({ if (ZSERIAL.availableForWrite() > SERIAL_TX_BUFFER_SIZE / 2){ ZSERIAL.flush();} ZSERIAL.write(char(_c)); })
-// #define zsendline(_z) ({ (_z & 0140 ) ? sendline(_z) : zsendline2(int _z); })
-
 
 template <typename T>
 void zsendline(T z) {
@@ -90,7 +85,7 @@ extern int Filcnt;
 // enter the "if" statement's clause
 #define setjmp(...)
 
-#define printf(s, ... ) DSERIAL.println(s);
+#define printf(s, ... ) DSERIAL_PRINTLN(s);
 #define fprintf(...)
 
 // fseek(in, Rxpos, 0)

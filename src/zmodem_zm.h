@@ -53,10 +53,10 @@ inline void xsendline(int c) {
 /*
 #define WHERESTR "[FILE : %s, FUNC : %s, LINE : %d]: "
 #define WHEREARG __FILE__,__func__,__LINE__
-#define DEBUG(...)  {char s[256]; sprintf(s, __VA_ARGS__); DSERIAL.println(s);}
+#define DEBUG(...)  {char s[256]; sprintf(s, __VA_ARGS__); DSERIAL_PRINTLN(s);}
 #define zperr(_fmt, ...) DEBUG(WHERESTR _fmt, WHEREARG,__VA_ARGS__)
 */
-//#define zperr(...) {char s[256]; sprintf(s, __VA_ARGS__); DSERIAL.println(s);}
+//#define zperr(...) {char s[256]; sprintf(s, __VA_ARGS__); DSERIAL_PRINTLN(s);}
 #define zperr(...)
 #endif
 

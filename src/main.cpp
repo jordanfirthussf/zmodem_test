@@ -29,50 +29,51 @@ extern int Filesleft;
 extern long Totalleft;
 
 extern SdFile fout;
-extern HardwareSerial DSERIAL;
+// extern HardwareSerial DSERIAL;
 
 // Dylan (monte_carlo_ecm, bitflipper, etc.) - This function was added because I found
 // that SERIAL_TX_BUFFER_SIZE was getting overrun at higher baud rates.  This modified
 // Serial.print() function ensures we are not overrunning the buffer by flushing if
 // it gets more than half full.
 
-size_t DSERIALprint(const __FlashStringHelper *ifsh)
-{
-  PGM_P p = reinterpret_cast<PGM_P>(ifsh);
-  size_t n = 0;
-  while (1) {
-    unsigned char c = pgm_read_byte(p++);
-    if (c == 0) break;
-    if (DSERIAL.availableForWrite() > SERIAL_TX_BUFFER_SIZE / 2) DSERIAL.flush();
-    if (DSERIAL.write(c)) n++;
-    else break;
-  }
-  return n;
-}
+// size_t DSERIAL_PRINT(const __FlashStringHelper *ifsh)
+// {
+//   PGM_P p = reinterpret_cast<PGM_P>(ifsh);
+//   size_t n = 0;
+//   while (1) {
+//     \
+//     unsigned char c = pgm_read_byte(p++);
+//     if (c == 0) break;
+//     if (DSERIAL_AVAILABLE_FOR_WRITE() > SERIAL_TX_BUFFER_SIZE / 2) ASERIAL.flush();
+//     if (DSERIAL_WRITE(c)) n++;
+//     else break;
+//   }
+//   return n;
+// }
 
-#define DSERIALprintln(_p) ({ DSERIALprint(_p); DSERIAL.write("\r\n"); })
+// #define DSERIAL_PRINTLN(_p) ({ DSERIAL_PRINT(_p); DSERIAL_WRITE("\r\n"); })
 
 void help(void)
 {
-  DSERIALprint(Progname);
-  DSERIALprint(F(" - Transfer rate: "));
-  DSERIAL.flush(); DSERIAL.println(ZMODEM_SPEED); DSERIAL.flush();
-  DSERIALprintln(F("Available Commands:")); DSERIAL.flush();
-  DSERIALprintln(F("HELP     - Print this list of commands")); DSERIAL.flush();
-  DSERIALprintln(F("DIR      - List files in current working directory - alternate LS")); DSERIAL.flush();
-  DSERIALprintln(F("PWD      - Print current working directory")); DSERIAL.flush();
-  DSERIALprintln(F("CD       - Change current working directory")); DSERIAL.flush();
+  ASERIAL.print(Progname);
+  ASERIAL.print(F(" - Transfer rate: ")); ASERIAL.flush();
+    ASERIAL.println(ZMODEM_SPEED); ASERIAL.flush();
+  ASERIAL.println(F("Available Commands:")); ASERIAL.flush();
+  ASERIAL.println(F("HELP     - Print this list of commands")); ASERIAL.flush();
+  ASERIAL.println(F("DIR      - List files in current working directory - alternate LS")); ASERIAL.flush();
+  ASERIAL.println(F("PWD      - Print current working directory")); ASERIAL.flush();
+  ASERIAL.println(F("CD       - Change current working directory")); ASERIAL.flush();
 #ifdef ARDUINO_SMALL_MEMORY_INCLUDE_FILE_MGR
-  DSERIALprintln(F("DEL file - Delete file - alternate RM")); DSERIAL.flush();
-  DSERIALprintln(F("MD  dir  - Create dir - alternate MKDIR")); DSERIAL.flush();
-  DSERIALprintln(F("RD  dir  - Delete dir - alternate RMDIR")); DSERIAL.flush();
+  ASERIAL.println(F("DEL file - Delete file - alternate RM")); ASERIAL.flush();
+  ASERIAL.println(F("MD  dir  - Create dir - alternate MKDIR")); ASERIAL.flush();
+  ASERIAL.println(F("RD  dir  - Delete dir - alternate RMDIR")); ASERIAL.flush();
 #endif
 #ifdef ARDUINO_SMALL_MEMORY_INCLUDE_SZ
-  DSERIALprintln(F("SZ  file - Send file from Arduino to terminal (* = all files)")); DSERIAL.flush();
+  ASERIAL.println(F("SZ  file - Send file from Arduino to terminal (* = all files)")); ASERIAL.flush();
 #endif
 #ifdef ARDUINO_SMALL_MEMORY_INCLUDE_RZ  
-  DSERIALprintln(F("RZ       - Receive a file from terminal to Arduino (Hyperterminal sends this")); DSERIAL.flush();
-  DSERIALprintln(F("              automatically when you select Transfer->Send File...)")); DSERIAL.flush();
+  ASERIAL.println(F("RZ       - Receive a file from terminal to Arduino (Hyperterminal sends this")); ASERIAL.flush();
+  ASERIAL.println(F("              automatically when you select Transfer->Send File...)")); ASERIAL.flush();
 #endif
 }
 
@@ -88,36 +89,31 @@ SdFile fout;
 #define dir ((FsFile *)&oneKbuf[256])
 #define file ((FsFile*)&oneKbuf[768])
 
-void setup()
-{
+void setup() {
   
-// NOTE: The following line needs to be uncommented if DSERIAL and ZSERIAL are decoupled again for debugging
-//  DSERIAL.begin(115200);
-  DSERIAL.begin(9600,SERIAL_8N1, 16, 17);  // Begin MCU <> XBee communication
-  DSERIAL.setTimeout(20);
-
-
-  ZSERIAL.begin(ZMODEM_SPEED);
+  ZSERIAL.begin(9600);
   ZSERIAL.setTimeout(TYPICAL_SERIAL_TIMEOUT);
 
-//  DSERIALprintln(Progname);
-  
-//  DSERIALprint(F("Transfer rate: "));
-//  DSERIALprintln(ZMODEM_SPEED);
+  DSERIAL_BEGIN(9600);
+  DSERIAL_SET_TIMEOUT(1200);
+
+  ASERIAL.println(Progname);
+  ASERIAL.print(F("Transfer rate: "));
+  ASERIAL.println(ZMODEM_SPEED);
 
 #ifdef SFMP3_SHIELD
-DSERIAL.println(F("SparkFun MP3!\n"));
+  ASERIAL.println(F("SparkFun MP3!\n"));
 #else
-DSERIAL.println(F("Regular SD Card\n"));
+  ASERIAL.println(F("Regular SD Card\n"));
 #endif
 
   //Initialize the SdCard.
-DSERIALprintln(F("About to initialize SdCard"));
-  if(!sd.begin(SD_SEL, SPI_HALF_SPEED)) sd.initErrorHalt(&DSERIAL);
+ASERIAL.println(F("About to initialize SdCard"));
+  if(!sd.begin(SD_SEL, SPI_HALF_SPEED)) sd.initErrorHalt(&ASERIAL);
   // depending upon your SdCard environment, SPI_HALF_SPEED may work better.
-DSERIALprintln(F("About to change directory"));
+ASERIAL.println(F("About to change directory"));
   if(!sd.chdir((const char *)("/"))) sd.errorHalt(F("sd.chdir"));
-DSERIALprintln(F("SdCard setup complete"));
+ASERIAL.println(F("SdCard setup complete"));
 
   #ifdef SFMP3_SHIELD
   mp3.begin();
@@ -149,21 +145,20 @@ int count_files(int *file_count, long *byte_count)
   return 0;
 }
 
-void loop(void)
-{
+void loop(void) {
   char *cmd = oneKbuf;
   char *param;
 
   *cmd = 0;
-  while (DSERIAL.available()) DSERIAL.read();
+  while (ASERIAL.available()) ASERIAL.read();
   
   char c = 0;
   while(1) {
-    if (DSERIAL.available() > 0) {
-      c = DSERIAL.read();
+    if (ASERIAL.available() > 0) {
+      c = ASERIAL.read();
       if ((c == 8 or c == 127) && strlen(cmd) > 0) cmd[strlen(cmd)-1] = 0;
       if (c == '\n' || c == '\r') break;
-      DSERIAL.write(c);
+      ASERIAL.write(c);
       if (c != 8 && c != 127) strncat(cmd, &c, 1);
     } else {
       // Dylan (monte_carlo_ecm, bitflipper, etc.) -
@@ -184,16 +179,16 @@ void loop(void)
   }
 
   strupr(cmd);
-  DSERIAL.println();
-  // DSERIALprintln(command);
-  // DSERIALprintln(parameter);
+  // DSERIAL_PRINTLN();
+  // DSERIAL_PRINTLN(command);
+  // DSERIAL_PRINTLN(parameter);
 
   if (!strcmp_P(cmd, PSTR("HELP"))) {
     
     help();
     
   } else if (!strcmp_P(cmd, PSTR("DIR")) || !strcmp_P(cmd, PSTR("LS"))) {
-    DSERIALprintln(F("Directory Listing:"));
+    ASERIAL.println(F("Directory Listing:"));
 
     dir->openCwd();
     dir->rewindDirectory();
@@ -204,62 +199,62 @@ void loop(void)
       // format file name
       file->getName(name, 64);
 
-      DSERIAL.flush(); DSERIAL.print(name); DSERIAL.flush();
-      for (uint8_t i = 0; i < 64 - strlen(name); ++i) DSERIALprint(F(" "));
+      ASERIAL.flush(); ASERIAL.print(name); ASERIAL.flush();
+      for (uint8_t i = 0; i < 64 - strlen(name); ++i) ASERIAL.print(F(" "));
       if (!(file->isDir())) {
         ultoa(file->fileSize(), name, 10);
-        DSERIAL.flush(); DSERIAL.println(name); DSERIAL.flush();
+        ASERIAL.flush(); ASERIAL.println(name); ASERIAL.flush();
       } else {
-        DSERIALprintln(F("DIR"));
+        ASERIAL.println(F("DIR"));
       }
-      DSERIAL.flush();
+      ASERIAL.flush();
       file->close();
     }
-    DSERIALprintln(F("End of Directory"));
+    ASERIAL.println(F("End of Directory"));
  
   } else if (!strcmp_P(cmd, PSTR("PWD"))) {
     dir->openCwd();
     dir->getName(name, 256);
     dir->close();
-    DSERIALprint(F("Current working directory is "));
-    DSERIAL.flush(); DSERIAL.println(name); DSERIAL.flush();
+    ASERIAL.print(F("Current working directory is "));
+    ASERIAL.flush(); ASERIAL.println(name); ASERIAL.flush();
   
   } else if (!strcmp_P(cmd, PSTR("CD"))) {
     if(!sd.chdir(param)) {
-      DSERIALprint(F("Directory "));
-      DSERIAL.flush(); DSERIAL.print(param); DSERIAL.flush();
-      DSERIALprintln(F(" not found"));
+      ASERIAL.print(F("Directory "));
+      ASERIAL.flush(); ASERIAL.print(param); ASERIAL.flush();
+      ASERIAL.println(F(" not found"));
     } else {
-      DSERIALprint(F("Current directory changed to "));
-      DSERIAL.flush(); DSERIAL.println(param); DSERIAL.flush();
+      ASERIAL.print(F("Current directory changed to "));
+      ASERIAL.flush(); ASERIAL.println(param); ASERIAL.flush();
     }
 #ifdef ARDUINO_SMALL_MEMORY_INCLUDE_FILE_MGR
   } else if (!strcmp_P(cmd, PSTR("DEL")) || !strcmp_P(cmd, PSTR("RM"))) {
     if (!sd.remove(param)) {
-      DSERIALprint(F("Failed to delete file "));
-      DSERIAL.flush(); DSERIAL.println(param); DSERIAL.flush();
+      ASERIAL.print(F("Failed to delete file "));
+      ASERIAL.flush(); ASERIAL.println(param); ASERIAL.flush();
     } else {
-      DSERIALprint(F("File "));
-      DSERIAL.flush(); DSERIAL.print(param); DSERIAL.flush();
-      DSERIALprintln(F(" deleted"));
+      ASERIAL.print(F("File "));
+      ASERIAL.flush(); ASERIAL.print(param); ASERIAL.flush();
+      ASERIAL.println(F(" deleted"));
     }
   } else if (!strcmp_P(cmd, PSTR("MD")) || !strcmp_P(cmd, PSTR("MKDIR"))) {
     if (!sd.mkdir(param, true)) {
-      DSERIALprint(F("Failed to create directory "));
-      DSERIAL.flush(); DSERIAL.println(param); DSERIAL.flush();
+      ASERIAL.print(F("Failed to create directory "));
+      ASERIAL.flush(); ASERIAL.println(param); ASERIAL.flush();
     } else {
-      DSERIALprint(F("Directory "));
-      DSERIAL.flush(); DSERIAL.print(param); DSERIAL.flush();
-      DSERIALprintln(F(" created"));
+      ASERIAL.print(F("Directory "));
+      ASERIAL.flush(); ASERIAL.print(param); ASERIAL.flush();
+      ASERIAL.println(F(" created"));
     }
   } else if (!strcmp_P(cmd, PSTR("RD")) || !strcmp_P(cmd, PSTR("RMDIR"))) {
     if (!sd.rmdir(param)) {
-      DSERIALprint(F("Failed to remove directory "));
-      DSERIAL.flush(); DSERIAL.println(param); DSERIAL.flush();
+      ASERIAL.print(F("Failed to remove directory "));
+      ASERIAL.flush(); ASERIAL.println(param); ASERIAL.flush();
     } else {
-      DSERIALprint(F("Directory "));
-      DSERIAL.flush(); DSERIAL.print(param); DSERIAL.flush();
-      DSERIALprintln(F(" removed"));
+      ASERIAL.print(F("Directory "));
+      ASERIAL.flush(); ASERIAL.print(param); ASERIAL.flush();
+      ASERIAL.println(F(" removed"));
     }
 #endif
 #ifdef ARDUINO_SMALL_MEMORY_INCLUDE_SZ
@@ -306,10 +301,10 @@ void loop(void)
 
         saybibi();
       } else {
-        DSERIALprintln(F("No files found to send"));
+        ASERIAL.println(F("No files found to send"));
       }
     } else if (!fout.open(param, O_READ)) {
-      DSERIALprintln(F("file.open failed"));
+      ASERIAL.println(F("file.open failed"));
     } else {
       // Start the ZMODEM transfer
       Filesleft = 1;
@@ -319,20 +314,17 @@ void loop(void)
       sendzrqinit();
       delay(200);
       wcs(param);
-      // DSERIAL.print("wcs: ");
-      // DSERIAL.println(wcs(param));
-      // DSERIAL.print("bibi: ");
       saybibi();
       fout.close();
     }
 #endif
 #ifdef ARDUINO_SMALL_MEMORY_INCLUDE_RZ
   } else if (!strcmp_P(cmd, PSTR("RZ"))) {
-//    DSERIALprintln(F("Receiving file..."));
+//    ASERIAL.println(F("Receiving file..."));
     if (wcreceive(0, 0)) {
-      DSERIALprintln(F("zmodem transfer failed"));
+      ASERIAL.println(F("zmodem transfer failed"));
     } else {
-      DSERIALprintln(F("zmodem transfer successful"));
+      ASERIAL.println(F("zmodem transfer successful"));
     }
     //fout.flush();
     fout.sync();

@@ -2,8 +2,6 @@
 #pragma once
 
 #include "zmodem_config.h"
-#include "zmodem_fixes.h"
-#include "zmodem_zm.h"
 
 /*
  *   Z M O D E M . H     Manifest constants for ZMODEM
@@ -11,7 +9,7 @@
  *    05-23-87  Chuck Forsberg Omen Technology Inc
  */
 #define ZPAD '*'        /* 052 Padding character begins frames */
-#define ZDLE 030        /* Ctrl-X Zmodem escape - `ala BISYNC DLE */
+#define ZDLE 030        /* (␘, \x18 Zmodem escape - `ala BISYNC DLE */
 #define ZDLEE (ZDLE^0100)       /* Escaped ZDLE as transmitted */
 #define ZBIN 'A'        /* Binary frame indicator */
 #define ZHEX 'B'        /* HEX frame indicator */

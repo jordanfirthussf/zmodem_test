@@ -265,29 +265,29 @@ int wcreceive(int argc, char **argp)
         return OK;
       }
       if (c == ERROR) {
-//DSERIAL.println(F("fubar 1"));
+DSERIAL_PRINTLN(F("fubar 1"));
         goto fubar;
       }
       c = rzfiles();
       if (c) {
-//DSERIAL.println(F("fubar 2"));
+DSERIAL_PRINTLN(F("fubar 2"));
         goto fubar;
       }
     } 
     else {
       for (;;) {
         if (wcrxpn(secbuf)== ERROR) {
-//DSERIAL.println(F("fubar 3"));
+DSERIAL_PRINTLN(F("fubar 3"));
           goto fubar;
         }
         if (secbuf[0]==0)
           return OK;
         if (procheader(secbuf) == ERROR) {
-//DSERIAL.println(F("fubar 4"));
+DSERIAL_PRINTLN(F("fubar 4"));
           goto fubar;
         }
         if (wcrx()==ERROR) {
-//DSERIAL.println(F("fubar 5"));          
+DSERIAL_PRINTLN(F("fubar 5"));
           goto fubar;
         }
       }
@@ -304,8 +304,8 @@ int wcreceive(int argc, char **argp)
 //      canit();
 //      return ERROR;
 //    }
-//DSERIAL.print("rz: ready to receive ");
-//DSERIAL.println(Pathname);
+DSERIAL_PRINT("rz: ready to receive ");
+DSERIAL_PRINTLN(Pathname);
 #ifndef ARDUINO
     if ((fout=fopen(Pathname, "w")) == NULL)
 #else
@@ -315,7 +315,7 @@ int wcreceive(int argc, char **argp)
     rxbytes = fout.fileSize();
     
     if (wcrx()==ERROR) {
-DSERIAL.println(F("fubar 6"));
+DSERIAL_PRINTLN(F("fubar 6"));
       goto fubar;
     }
   }
@@ -464,21 +464,21 @@ get2:
         oldcrc=checksum=0;
         for (p=rxbuf,wcj=Blklen; --wcj>=0; ) {
           if ((firstch=readline(1)) < 0) {
-//DSERIAL.println(F("bilge 1"));
+DSERIAL_PRINTLN(F("bilge 1"));
             goto bilge;
           }
           oldcrc=updcrc(firstch, oldcrc);
           checksum += (*p++ = firstch);
         }
         if ((firstch=readline(1)) < 0) {
-//DSERIAL.println(F("bilge 2"));
+DSERIAL_PRINTLN(F("bilge 2"));
 
           goto bilge;
         }
         if (Crcflg) {
           oldcrc=updcrc(firstch, oldcrc);
           if ((firstch=readline(1)) < 0) {
-//DSERIAL.println(F("bilge 3"));
+DSERIAL_PRINTLN(F("bilge 3"));
 
             goto bilge;
           }
@@ -747,7 +747,7 @@ int tryz(void)
   int c, n;
   int cmdzack1flg;
 
-//DSERIAL.println(F("Entering tryz"));
+DSERIAL_PRINTLN(F("Entering tryz"));
 
   if (Nozmodem)           /* Check for "rb" program name */
     return 0;
@@ -784,16 +784,16 @@ int tryz(void)
 again:
     switch (zgethdr(Rxhdr, 0)) {
     case ZRQINIT:
-//DSERIAL.println(F("tryz got ZRQINIT"));
+DSERIAL_PRINTLN(F("tryz got ZRQINIT"));
       continue;
     case ZEOF:
-//DSERIAL.println(F("tryz got ZEOF"));
+DSERIAL_PRINTLN(F("tryz got ZEOF"));
       continue;
     case TIMEOUT:
-//DSERIAL.println(F("tryz got TIMEOUT"));
+DSERIAL_PRINTLN(F("tryz got TIMEOUT"));
       continue;
     case ZFILE:
-//DSERIAL.println(F("tryz got ZFILE"));
+DSERIAL_PRINTLN(F("tryz got ZFILE"));
 
       zconv = Rxhdr[ZF0];
       zmanag = Rxhdr[ZF1];
@@ -806,7 +806,7 @@ again:
       zshhdr(ZNAK, Txhdr);
       goto again;
     case ZSINIT:
-//DSERIAL.println(F("tryz got ZSINIT"));
+DSERIAL_PRINTLN(F("tryz got ZSINIT"));
 
       Zctlesc = TESCCTL & Rxhdr[ZF0];
       if (zrdata(Attn, ZATTNLEN) == GOTCRCW) {
@@ -824,7 +824,7 @@ again:
 #ifdef vax11c
       return ERROR;
 #else
-//DSERIAL.println(F("tryz got ZCOMMAND"));
+DSERIAL_PRINTLN(F("tryz got ZCOMMAND"));
 
       cmdzack1flg = Rxhdr[ZF0];
       if (zrdata(secbuf, SECBUF_LEN) == GOTCRCW) {
@@ -846,20 +846,20 @@ again:
       goto again;
 #endif
     case ZCOMPL:
-//DSERIAL.println(F("tryz got ZCOMPL"));
+DSERIAL_PRINTLN(F("tryz got ZCOMPL"));
 
       goto again;
     default:
-//DSERIAL.println(F("tryz got default"));
+DSERIAL_PRINTLN(F("tryz got default"));
     
       continue;
     case ZFIN:
-//DSERIAL.println(F("tryz got ZFIN"));
+DSERIAL_PRINTLN(F("tryz got ZFIN"));
 
       ackbibi(); 
       return ZCOMPL;
     case ZCAN:
-//DSERIAL.println(F("tryz got ZCAN"));
+DSERIAL_PRINTLN(F("tryz got ZCAN"));
 
       return ERROR;
     }

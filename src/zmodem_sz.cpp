@@ -1,43 +1,4 @@
-/*% cc -compat -M2 -Ox -K -i -DTXBSIZE=16384  -DNFGVMIN -DREADCHECK sz.c -lx -o sz; size sz
- 
- Following is used for testing, might not be reasonable for production
- <-xtx-*> cc -Osal -DTXBSIZE=32768  -DSV sz.c -lx -o $B/sz; size $B/sz
- 
- ****************************************************************************
- *
- * sz.c By Chuck Forsberg,  Omen Technology INC
- *
- ****************************************************************************
- *
- * Typical Unix/Xenix/Clone compiles:
- *
- *      cc -O sz.c -o sz                USG (SYS III/V) Unix
- *      cc -O -DSV sz.c -o sz           Sys V Release 2 with non-blocking input
- *                                      Define to allow reverse channel checking
- *      cc -O -DV7  sz.c -o sz          Unix Version 7, 2.8 - 4.3 BSD
- *
- *      cc -O -K -i -DNFGVMIN -DREADCHECK sz.c -lx -o sz        Classic Xenix
- *
- *      ln sz sb                        **** All versions ****
- *      ln sz sx                        **** All versions ****
- *
- ****************************************************************************
- *
- * Typical VMS compile and install sequence:
- *
- *              define LNK$LIBRARY   SYS$LIBRARY:VAXCRTL.OLB
- *              cc sz.c
- *              cc vvmodem.c
- *              link sz,vvmodem
- *      sz :== $disk$user2:[username.subdir]sz.exe
- *
- *  If you feel adventureous, remove the #define BADSYNC line
- *  immediately following the #ifdef vax11c line!  Some VMS
- *  systems know how to fseek, some don't.
- *
- ****************************************************************************
- *
- *
+/*
  * A program for Unix to send files and commands to computers running
  *  Professional-YAM, PowerCom, YAM, IMP, or programs supporting Y/XMODEM.
  *
@@ -122,7 +83,7 @@ char Myattn[] = {
 
 #define Modem2 0           /* XMODEM Protocol - don't send pathnames */
 
-#define Ascii 1            /* Add CR's for brain damaged programs */
+#define Ascii 0            /* Add CR's for brain damaged programs */
 #define Fullname 0         /* transmit full pathname */
 #define Unlinkafter 0      /* Unlink file after it is sent */
 #define Dottoslash 0       /* Change foo.bar.baz to foo/bar/baz */
@@ -201,14 +162,12 @@ int wcs(const char *oname)
 //  vpos = 0;
   switch (wctxpn(oname)) {
    case ERROR:
-    DSERIAL.print("error");
+    DSERIAL_PRINT("error");
      return ERROR;
    case ZSKIP:
-    DSERIAL.print("ok");
+    DSERIAL_PRINT("ok");
      return OK;
   }
-
-  DSERIAL.print("A2");
 
 //  ++Filcnt;
   if(!Zmodem && wctx(fout.fileSize())==ERROR) {
@@ -237,11 +196,11 @@ int wctxpn(const char *name)
     *q++ = 0;
   }
 //  if (!Ascii && (in!=stdin) && *name && fstat(fileno(in), &f)!= -1)
-  if (!Ascii)
+  // if (!Ascii)
     // I will have to figure out how to convert the uSD date/time format to a UNIX epoch
     // sprintf(p, "%lu %lo %o 0 %d %ld", fout.fileSize(), 0L,0600, Filesleft, Totalleft);
 // Avoid sprintf to save memory for small boards.  This sketch doesn't know what time it is anyway
-    ultoa(fout.fileSize(), p, 10);
+    // ultoa(fout.fileSize(), p, 10);
     // strcat_P(p, PSTR(" 0 0 0 "));
     // q = p + strlen(p);
     // ultoa(Filesleft, q, 10);
@@ -250,31 +209,25 @@ int wctxpn(const char *name)
     // ultoa(Totalleft, q, 10);
 
   Totalleft -= fout.fileSize();
-// DSERIAL.print(F("wctxpn sf = "));
-// DSERIAL.print();
-DSERIAL.print(F("  length = "));
-DSERIAL.println(Totalleft);
+
+DSERIAL_PRINT(F("  length = ")); DSERIAL_PRINTLN(Totalleft);
+
   if (--Filesleft <= 0)
     Totalleft = 0;
   if (Totalleft < 0)
     Totalleft = 0;
 
   /* force 1k blocks if name won't fit in 128 byte block */
-  //Pete (El Supremo) This can't be right??!
   if (txbuf[125])
-//    blklen=1024;
     blklen = TXBSIZE;
   else {          /* A little goodie for IMP/KMD */
     blklen = 128;
     txbuf[127] = (fout.fileSize() + 127) >>7;
     txbuf[126] = (fout.fileSize() + 127) >>15;
   }
-  DSERIAL.print("txbuf"); DSERIAL.print(txbuf);
-  DSERIAL.print("p"); DSERIAL.print(p); DSERIAL.print("xx"); delay(5);
-  DSERIAL.print("strlen p"); DSERIAL.print(strlen(p)); delay(5);
-  // return zsendfile(txbuf, 1+strlen(p)+(p-txbuf));
+
+
   return zsendfile(txbuf, 1+strlen(p)+(p-txbuf));
-                        // 1+15+ (166 0 0 0 1 166) - (Lab7_testB_data028.csv)
 }
 
 
@@ -284,12 +237,11 @@ int wctx(long flen)
   int sectnum, attempts, firstch;
   long charssent;
 
-DSERIAL.println("\nwctx");
+DSERIAL_PRINTLN("\nwctx");
 
   charssent = 0;
   firstsec=TRUE;
   thisblklen = blklen;
-  // vfile(F("wctx:file length=%ld"), flen);
 
   while ((firstch=readline(Rxtimeout))!=NAK && firstch != WANTCRC
     && firstch != WANTG && firstch!=TIMEOUT && firstch!=CAN)
@@ -318,7 +270,6 @@ DSERIAL.println("\nwctx");
   do {
     purgeline();
     sendline(EOT);
-    //fflush(stdout);
     ++attempts;
   }
   while ((firstch=(readline(Rxtimeout)) != ACK) && attempts < Tx_RETRYMAX);
@@ -420,16 +371,16 @@ int filbuf(char *buf,int count)
 {
   int c, m;
 
-DSERIAL.println("\nfilbuf");
+DSERIAL_PRINTLN("\nfilbuf");
 
   if ( !Ascii) {
 //    m = read(fileno(in), buf, count);
     m = fout.read(buf, count);
-DSERIAL.println(F("filbuf: '"));
+DSERIAL_PRINTLN(F("filbuf: '"));
 //for(int i=0;i<m;i++) {
-//  DSERIAL.print(buf[i]);
+//  DSERIAL_PRINT(buf[i]);
 //}
-DSERIAL.println(F("'"));
+DSERIAL_PRINTLN(F("'"));
     if (m <= 0)
       return 0;
     while (m < count)
@@ -463,8 +414,6 @@ DSERIAL.println(F("'"));
   return count;
 }
 
-
-
 /* Fill buffer with blklen chars */
 int zfilbuf(void)
 {
@@ -485,10 +434,9 @@ int zsendfile(char *buf, int blen)
   int c;
   UNSL long crc;
 
-DSERIAL.println(F("\nzsendfile"));
+DSERIAL_PRINTLN(F("\nzsendfile"));
 
   while (true) {
-    DSERIAL.print("hi");
     Txhdr[ZF0] = Lzconv;    /* file conversion request */
     Txhdr[ZF1] = Lzmanag;   /* file management request */
     if constexpr (Lskipnocor){
@@ -496,18 +444,10 @@ DSERIAL.println(F("\nzsendfile"));
       }
     Txhdr[ZF2] = Lztrans;   /* file transport request */
     Txhdr[ZF3] = 0; // should be 0 !!
-    // DSERIAL.print("Txhdr: "); DSERIAL.write(Txhdr, 4) ; DSERIAL.print("?"); delay(50); // good
     zsbhdr(ZFILE, Txhdr);
-    // DSERIAL.print("buf"); // good
-    // DSERIAL.print(buf);
-    // DSERIAL.print("len");
-    // DSERIAL.print(blen); delay(5);
     zsdata(buf, blen, ZCRCW);
-    DSERIAL.print("asdf"); delay(50);
 again:
-    DSERIAL.print("test3"); delay(50);
     c = zgethdr(Rxhdr, 1);
-    DSERIAL.print("asfd"); delay(50);
     switch (c) {
     case ZRINIT:
       while ((c = readline(50)) > 0)
@@ -521,7 +461,7 @@ again:
     case TIMEOUT:
     case ZABORT:
     case ZFIN:
-DSERIAL.println(F("\nzsendfile - ZFIN"));
+DSERIAL_PRINTLN(F("\nzsendfile - ZFIN"));
 
       return ERROR;
     case ZCRC:
@@ -542,7 +482,7 @@ DSERIAL.println(F("\nzsendfile - ZFIN"));
     case ZSKIP:
       fout.close();
       //fclose(in);
-DSERIAL.println(F("\nzsendfile - ZSKIP"));
+DSERIAL_PRINTLN(F("\nzsendfile - ZSKIP"));
       return c;
     case ZRPOS:
       /*
@@ -555,8 +495,8 @@ DSERIAL.println(F("\nzsendfile - ZSKIP"));
         return ERROR;
       Lastsync = (bytcnt = Txpos = Rxpos) -1;
       int ret = zsendfdata();
-DSERIAL.print(F("\nzsendfile - exit - "));
-DSERIAL.println(ret);
+DSERIAL_PRINT(F("\nzsendfile - exit - "));
+DSERIAL_PRINTLN(ret);
       return(ret);
     }
   } //
@@ -572,11 +512,11 @@ int zsendfdata(void)
   int newcnt;
   uint8_t junkcount;          /* Counts garbage chars received by TX */
 
-DSERIAL.print(F("\nzsendfdata: "));
-DSERIAL.print(F("number = "));
-DSERIAL.print(Filesleft+1);
-DSERIAL.print(F("   length = "));
-DSERIAL.println(Totalleft);
+DSERIAL_PRINT(F("\nzsendfdata: "));
+DSERIAL_PRINT(F("number = "));
+DSERIAL_PRINT(Filesleft+1);
+DSERIAL_PRINT(F("   length = "));
+DSERIAL_PRINTLN(Totalleft);
   Lrxpos = 0;
   junkcount = 0;
   Beenhereb4 = FALSE;
@@ -592,7 +532,7 @@ gotack:
     case ZCAN:
       fout.close();
       //fclose(in);
-DSERIAL.println(F("zsendfdata - error - 1"));
+DSERIAL_PRINTLN(F("zsendfdata - error - 1"));
       return ERROR;
     case ZSKIP:
       fout.close();
@@ -630,7 +570,7 @@ DSERIAL.println(F("zsendfdata - error - 1"));
 #endif
   }
 
-DSERIAL.println("zsendfdata - 1");
+DSERIAL_PRINTLN("zsendfdata - 1");
 
 //  if ( !Fromcu)
 //    signal(SIGINT, onintr);
@@ -639,12 +579,12 @@ DSERIAL.println("zsendfdata - 1");
   stohdr(Txpos);
   zsbhdr(ZDATA, Txhdr);
 
-DSERIAL.println("zsendfdata - 2");
+DSERIAL_PRINTLN("zsendfdata - 2");
 
   do {
     n = zfilbuf();
 // AHA - it reads the 18 chars here
-DSERIAL.println(n);
+DSERIAL_PRINTLN(n);
     if (Eofseen)
       e = ZCRCE;
     else if (junkcount > 3)
@@ -702,7 +642,7 @@ DSERIAL.println(n);
 
   } while (!Eofseen);
 
-DSERIAL.println("zsendfdata - 4");
+DSERIAL_PRINTLN("zsendfdata - 4");
 
 //  if ( !Fromcu)
 //    signal(SIGINT, SIG_IGN);
@@ -712,23 +652,23 @@ DSERIAL.println("zsendfdata - 4");
     zsbhdr(ZEOF, Txhdr);
     switch (getinsync(0)) {
     case ZACK:
-DSERIAL.println(F("zsendfdata - ZAK"));
+DSERIAL_PRINTLN(F("zsendfdata - ZAK"));
       continue;
     case ZRPOS:
-DSERIAL.println(F("zsendfdata - ZRPOS"));
+DSERIAL_PRINTLN(F("zsendfdata - ZRPOS"));
       goto somemore;
     case ZRINIT:
-DSERIAL.println(F("zsendfdata - OK"));
+DSERIAL_PRINTLN(F("zsendfdata - OK"));
       return OK;
     case ZSKIP:
       fout.close();
       //fclose(in);
-DSERIAL.println(F("zsendfdata - ZSKIP"));
+DSERIAL_PRINTLN(F("zsendfdata - ZSKIP"));
       return c;
     default:
       fout.close();
       //fclose(in);
-DSERIAL.println(F("zsendfdata - error - 2"));
+DSERIAL_PRINTLN(F("zsendfdata - error - 2"));
       return ERROR;
     }
   }
@@ -746,7 +686,7 @@ int getinsync(int flag)
 
   for (;;) {
     if (Test) {
-DSERIAL.println(F("***** Signal Caught *****"));
+DSERIAL_PRINTLN(F("***** Signal Caught *****"));
       Rxpos = 0;
       c = ZRPOS;
     }
@@ -757,7 +697,7 @@ DSERIAL.println(F("***** Signal Caught *****"));
     case ZABORT:
     case ZFIN:
     case TIMEOUT:
-DSERIAL.println(F("getinsync - timeout"));
+DSERIAL_PRINTLN(F("getinsync - timeout"));
       return ERROR;
     case ZRPOS:
       /* ************************************* */
@@ -768,7 +708,7 @@ DSERIAL.println(F("getinsync - timeout"));
 //      if (fseek(in, Rxpos, 0)) {
       // seekSet returns true on success
       if(!fout.seekSet(Rxpos)) {
-DSERIAL.println(F("getinsync - fseek"));
+DSERIAL_PRINTLN(F("getinsync - fseek"));
         return ERROR;
       }
       Eofseen = 0;
@@ -804,11 +744,10 @@ DSERIAL.println(F("getinsync - fseek"));
 // the download, but sending the ZRQINIT is the right way to initiate a ZMODEM transfer
 // according to the protocol documentation.
 
-#define ZRQINIT_STR F("\x2a\x2a\x18\x42" \
-"\x30\x30\x30\x30\x30\x30\x30\x30\x30\x30\x30\x30\x30\x30" \
-"\x0d\x0a\x11")
-// "\x30\x30\x30\x30\x30\x30\x30\x30\x30\x30\x30\x30\x30\x30" \
-"\x00\x00\x00\x00\x00\x00\x00\x00\x00" \
+#define ZRQINIT_STR F(\
+  "\x2a\x2a\x18\x42\x30\x30\x30\x30\x30\x30\x30\x30\x30\x30\x30\x30\x30\x30\x0d\x0a\x11")
+// **␘B (14 zeros) CR-LF-DC1
+// <ZPAD><ZPAD><ZDLE><ZHEX>)(14 zeros) CR-LF-<XON>
 
 void sendzrqinit(void)
 {
@@ -816,9 +755,7 @@ void sendzrqinit(void)
 }
 
 /* Say "bibi" to the receiver, try to do it cleanly */
-void saybibi(void)
-{
-  static unsigned long now = millis();
+void saybibi(void) {
   for (;;) {
     stohdr(0L);             /* CAF Was zsbhdr - minor change */
     zshhdr(ZFIN, Txhdr);    /*  to make debugging easier */
@@ -830,13 +767,9 @@ void saybibi(void)
     case ZCAN:
     case TIMEOUT:
       return;
-    }
-    if (millis() - now > 1000) {
-      now = millis();
-      DSERIAL.println("in saybibi");
-    }
-  }
-}
+    } // switch
+  } // for
+} // saybibi
 
 #endif
 

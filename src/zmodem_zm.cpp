@@ -220,7 +220,8 @@ static char *Zendnames[] = {
 void zsdata(char *buf,int length,int frameend)
 {
 
-  vfile(F("zsdata: %d %s"), length, Zendnames[(frameend-ZCRCE)&3]);
+  // vfile(F("zsdata: %d %s"), length, Zendnames[(frameend-ZCRCE)&3]);
+
   if (Crc32t) {
     int c;
     UNSL long crc;
@@ -641,7 +642,6 @@ int zrhhdr(char *hdr)
 #ifdef ZMODEM
   Protocol = ZMODEM;
 #endif
-//  Zmodem = 1; 
   return Rxtype;
 }
 
@@ -741,68 +741,6 @@ int zgethex(void)
  * Read a byte, checking for ZMODEM escape encoding
  *  including CAN*5 which represents a quick abort
  */
-/*
-int zdlread(void)
-{
-  int c;
-
-again:
-  // Quick check for non control characters
-  if ((c = readline(Rxtimeout)) & 0140)
-    return c;
-  switch (c) {
-  case ZDLE:
-    break;
-  case 023:
-  case 0223:
-  case 021:
-  case 0221:
-    goto again;
-  default:
-    if (Zctlesc && !(c & 0140)) {
-      goto again;
-    }
-    return c;
-  }
-again2:
-  if ((c = readline(Rxtimeout)) < 0)
-    return c;
-  if (c == CAN && (c = readline(Rxtimeout)) < 0)
-    return c;
-  if (c == CAN && (c = readline(Rxtimeout)) < 0)
-    return c;
-  if (c == CAN && (c = readline(Rxtimeout)) < 0)
-    return c;
-  switch (c) {
-  case CAN:
-    return GOTCAN;
-  case ZCRCE:
-  case ZCRCG:
-  case ZCRCQ:
-  case ZCRCW:
-    return (c | GOTOR);
-  case ZRUB0:
-    return 0177;
-  case ZRUB1:
-    return 0377;
-  case 023:
-  case 0223:
-  case 021:
-  case 0221:
-    goto again2;
-  default:
-    if (Zctlesc && ! (c & 0140)) {
-      goto again2;
-    }
-    if ((c & 0140) ==  0100)
-      return (c ^ 0100);
-    break;
-  }
-  if (Verbose>1)
-    zperr("Bad escape sequence %x", c);
-  return ERROR;
-}
-*/
 int zdlread2(int c)
 {
 again:
@@ -917,43 +855,6 @@ long rclhdr(char *hdr)
 }
 #endif
 
-/*
- *  Send a character to modem.  Small is beautiful.
- */
-// Why was this called sendline ??
-//void sendline(int c)
-//{
-//  ZSERIAL.write(c & 0xFF);
-//  ZSERIAL.write(char(c));
-//  ZSERIAL.flush();
-
-//DSERIAL.print("SEND: ");  
-//DSERIAL.print(c, HEX);
-//DSERIAL.println();
-
-//}
-/*
-//>>> Needs to be fixed up - see the original in rz
-// like sendline, this does not read a line!
-int readline(int timeout)
-{
-  long then;
-  unsigned char c;
-  
-  then = millis();
-  while(ZSERIAL.available() < 1) {
-    if(millis() - then > (unsigned int)timeout*100UL) {
-DSERIAL.println("readline - TIMEOUT");      
-      return(TIMEOUT);
-    }
-  }
-  c = ZSERIAL.read();
-//DSERIAL.print("READ: ");  
-//DSERIAL.print(c, HEX);
-//DSERIAL.println();
-  return(c);
-}
-*/
 
 /*
  * Purge the modem input queue of all characters
@@ -978,7 +879,6 @@ void flushmo(void)
 {
   ZSERIAL.flush();
 }
-
 
 
 /* send cancel string to get the other end to shut up */
