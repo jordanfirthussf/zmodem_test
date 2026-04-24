@@ -83,37 +83,43 @@ void loop() {
   // DSERIAL_PRINTLN(parameter);
 
   if (!strcmp_P(cmd, PSTR("HELP"))) {
-    
-    help();
+    String print_line = help();
+    ASERIAL.println(print_line);
+
     
   } else if (!strcmp_P(cmd, PSTR("DIR")) || !strcmp_P(cmd, PSTR("LS"))) {
-    directory_listing();
+    String print_line = directory_listing();
+    ASERIAL.println(print_line);
  
   }
 
   else if (!strcmp_P(cmd, PSTR("PWD"))) {
-    print_working_directory();
+    ASERIAL.print(print_working_directory());
+
   
   } else if (!strcmp_P(cmd, PSTR("CD"))) {
-    change_directory(param);
-
+    ASERIAL.print( change_directory(param));
+  }
 #ifdef ARDUINO_SMALL_MEMORY_INCLUDE_FILE_MGR
-  } else if (!strcmp_P(cmd, PSTR("DEL")) || !strcmp_P(cmd, PSTR("RM"))) {
+  else if (!strcmp_P(cmd, PSTR("DEL")) || !strcmp_P(cmd, PSTR("RM"))) {
     remove_file(param);
   } else if (!strcmp_P(cmd, PSTR("MD")) || !strcmp_P(cmd, PSTR("MKDIR"))) {
     mkdir(param);
   } else if (!strcmp_P(cmd, PSTR("RD")) || !strcmp_P(cmd, PSTR("RMDIR"))) {
     remove_directory(param);
+  }
 #endif
 #ifdef ARDUINO_SMALL_MEMORY_INCLUDE_SZ
-  } else if (!strcmp_P(cmd, PSTR("SZ"))) {
+  else if (!strcmp_P(cmd, PSTR("SZ"))) {
 //    Filcnt = 0;
     zmodem_send_file(param);
+  }
 #endif
 #ifdef ARDUINO_SMALL_MEMORY_INCLUDE_RZ
-  } else if (!strcmp_P(cmd, PSTR("RZ"))) {
-    zmodem_receive_file();
+   else if (!strcmp_P(cmd, PSTR("RZ"))) {
+    ASERIAL.println("Receiving file...")
+    ASERIAL.println(zmodem_receive_file()); }
 #endif
-  }
+
 
 }

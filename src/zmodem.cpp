@@ -1,27 +1,29 @@
 #include "zmodem.h"
 
-void help(void)
+String help(void)
 {
-  ASERIAL.print(Progname);
-  ASERIAL.print(F(" - Transfer rate: ")); ASERIAL.flush();
-  ASERIAL.println(ZMODEM_SPEED); ASERIAL.flush();
-  ASERIAL.println(F("Available Commands:")); ASERIAL.flush();
-  ASERIAL.println(F("HELP     - Print this list of commands")); ASERIAL.flush();
-  ASERIAL.println(F("DIR      - List files in current working directory - alternate LS")); ASERIAL.flush();
-  ASERIAL.println(F("PWD      - Print current working directory")); ASERIAL.flush();
-  ASERIAL.println(F("CD       - Change current working directory")); ASERIAL.flush();
-#ifdef ARDUINO_SMALL_MEMORY_INCLUDE_FILE_MGR
-  ASERIAL.println(F("DEL file - Delete file - alternate RM")); ASERIAL.flush();
-  ASERIAL.println(F("MD  dir  - Create dir - alternate MKDIR")); ASERIAL.flush();
-  ASERIAL.println(F("RD  dir  - Delete dir - alternate RMDIR")); ASERIAL.flush();
-#endif
-#ifdef ARDUINO_SMALL_MEMORY_INCLUDE_SZ
-  ASERIAL.println(F("SZ  file - Send file from Arduino to terminal (* = all files)")); ASERIAL.flush();
+  String print_line;
+
+  print_line += "\n";
+  print_line += Progname;
+  print_line += " - Transfer rate: ";
+  print_line += ZMODEM_SPEED;
+  print_line += "\nAvailable Commands: \n";
+  print_line += "HELP     - Print this list of commands \n";
+  print_line += "DIR      - List files in current working directory - alternate LS \n";
+  print_line += "PWD      - Print current working directory \n";
+  print_line += "CD       - Change current working directory \n";
+#ifdef   ARDUINO_SMALL_MEMORY_INCLUDE_FILE_MGR
+  print_line += "DEL file - Delete file - alternate RM \n";
+  print_line += "MD  dir  - Create dir - alternate MKDIR \n";
+  print_line += "RD  dir  - Delete dir - alternate RMDIR \n";
 #endif
 #ifdef ARDUINO_SMALL_MEMORY_INCLUDE_RZ
-  ASERIAL.println(F("RZ       - Receive a file from terminal to Arduino (Hyperterminal sends this")); ASERIAL.flush();
-  ASERIAL.println(F("              automatically when you select Transfer->Send File...)")); ASERIAL.flush();
+  print_line += "RZ       - Receive a file from terminal to Arduino (Hyperterminal sends this \n";
+  print_line += "              automatically when you select Transfer->Send File...) \n";
 #endif
+  print_line += "\n";
+  return print_line;
 }
 
 int count_files(int *file_count, long *byte_count)
@@ -46,8 +48,11 @@ int count_files(int *file_count, long *byte_count)
   return 0;
 }
 
-void directory_listing() {
-  ASERIAL.println(F("Directory Listing:"));
+String directory_listing() { // command: ls
+  String print_line;
+
+  print_line += "\nDirectory Listing: \n";
+  // ASERIAL.println(F("Directory Listing:"));
 
   dir->openCwd();
   dir->rewindDirectory();
@@ -58,73 +63,93 @@ void directory_listing() {
     // format file name
     file->getName(file_name, 64);
 
-    ASERIAL.flush(); ASERIAL.print(file_name); ASERIAL.flush();
-    for (uint8_t i = 0; i < 64 - strlen(file_name); ++i) ASERIAL.print(F(" "));
-    if (!(file->isDir())) {
-      ultoa(file->fileSize(), file_name, 10);
-      ASERIAL.flush(); ASERIAL.println(file_name); ASERIAL.flush();
-    } else {
-      ASERIAL.println(F("DIR"));
+    print_line += file_name;
+    for (uint8_t i = 0; i < 64 - strlen(file_name); ++i) {
+      print_line+=" ";
     }
-    ASERIAL.flush();
+    if (!(file->isDir())) {
+      // here using file_name to store char file_size, which makes no sense
+      ultoa(file->fileSize(), file_name, 10);
+      print_line+=file_name;
+    }
+    else {
+      print_line+="DIR";
+    } // end of if/else
+    // ASERIAL.flush();
     file->close();
-  }
-  ASERIAL.println(F("End of Directory"));
+    print_line += "\n";
+  } // end  of while (one line for each file
+  print_line+= "End of Directory";
+
+  return print_line;
 }
 
-void print_working_directory() {
+String print_working_directory() {
+  String print_line;
   dir->openCwd();
   dir->getName(file_name, 256);
   dir->close();
-  ASERIAL.print(F("Current working directory is "));
-  ASERIAL.flush(); ASERIAL.println(file_name); ASERIAL.flush();
+  print_line += "\n";
+  print_line += "Current Directory is: ";
+  print_line += file_name;
+  print_line += "\n";
+  return print_line;
 }
 
-void change_directory(char* param) {
+String change_directory(char* param) {
+  String print_line;
+
   if(!sd.chdir(param)) {
-    ASERIAL.print(F("Directory "));
-    ASERIAL.flush(); ASERIAL.print(param); ASERIAL.flush();
-    ASERIAL.println(F(" not found"));
+    print_line += "\nDirectory ";
+    print_line += param;
+    print_line += "not found\n";
   } else {
-    ASERIAL.print(F("Current directory changed to "));
-    ASERIAL.flush(); ASERIAL.println(param); ASERIAL.flush();
+    print_line += "Current directory changed to ";
+    print_line += param;
   }
+  return print_line
 }
 
-void remove_file(char* param) {
+String remove_file(char* param) {
+  String print_line;
+
   if (!sd.remove(param)) {
-    ASERIAL.print(F("Failed to delete file "));
-    ASERIAL.flush(); ASERIAL.println(param); ASERIAL.flush();
+    print_line += "\nFailed to delete file ";
+    print_line += param;
   } else {
-    ASERIAL.print(F("File "));
-    ASERIAL.flush(); ASERIAL.print(param); ASERIAL.flush();
-    ASERIAL.println(F(" deleted"));
+    print_line += "File ";
+    print_line += param;
+    print_line += "deleted\n";
   }
+  return print_line;
 }
 
-void mkdir(char* param) {
+String mkdir(char* param) {
+  String print_line;
   if (!sd.mkdir(param, true)) {
-    ASERIAL.print(F("Failed to create directory "));
-    ASERIAL.flush(); ASERIAL.println(param); ASERIAL.flush();
+    print_line += "\nFailed to create directory ";
+    print_line += param;
   } else {
-    ASERIAL.print(F("Directory "));
-    ASERIAL.flush(); ASERIAL.print(param); ASERIAL.flush();
-    ASERIAL.println(F(" created"));
+    print_line += "\nDirectory ";
+    print_line += param;
+    print_line += " created\n";
   }
 }
 
-void remove_directory(char* param) {
+String remove_directory(char* param) {
+  String print_line;
   if (!sd.rmdir(param)) {
-    ASERIAL.print(F("Failed to remove directory "));
-    ASERIAL.flush(); ASERIAL.println(param); ASERIAL.flush();
+    print_line += "\nFailed to remove directoy ";
+    print_line += param;
   } else {
-    ASERIAL.print(F("Directory "));
-    ASERIAL.flush(); ASERIAL.print(param); ASERIAL.flush();
-    ASERIAL.println(F(" removed"));
+    print_line += "\nDirectory ";
+    print_line += param;
+    print_line += " removed\n";
   }
+  return print_line;
 }
 
-void zmodem_send_file(char* param) {
+String zmodem_send_file(char* param) {
   if (!strcmp_P(param, PSTR("*"))) {
     count_files(&Filesleft, &Totalleft);
 
@@ -166,10 +191,10 @@ void zmodem_send_file(char* param) {
 
       saybibi();
     } else {
-      ASERIAL.println(F("No files found to send"));
+      return "No files found to send";
     }
   } else if (!fout.open(param, O_READ)) {
-    ASERIAL.println(F("file.open failed"));
+    return "file open failed";
   } else {
     // Start the ZMODEM transfer
     Filesleft = 1;
@@ -181,19 +206,23 @@ void zmodem_send_file(char* param) {
     wcs(param);
     saybibi();
     fout.close();
+    return "file transfer complete";
   }
 }
 
-void zmodem_receive_file() {
-  ASERIAL.println(F("Receiving file..."));
+String zmodem_receive_file() {
+
+  String print_line;
+    // ASERIAL.println(F("Receiving file..."));
   if (wcreceive(0, 0)) {
-    ASERIAL.println(F("zmodem transfer failed"));
+    print_line += "zmodem transfer failed";
   } else {
-    ASERIAL.println(F("zmodem transfer successful"));
+    print_line += "zmodem transfer succeeded";
   }
   //fout.flush();
   fout.sync();
   fout.close();
+  return print_line;
 }
 
 
