@@ -3,10 +3,9 @@
 From: http://stackoverflow.com/questions/2607853/why-prototype-is-used-header-files
 */
 
-#ifndef ZMODEM_FIXES_H
-#define ZMODEM_FIXES_H
+#pragma once
 
-#define SERIAL_TX_BUFFER_SIZE 64
+#define SERIAL_TX_BUFFER_SIZE 128
 
 ////////////////////////////////////////////////////////
 
@@ -14,10 +13,11 @@ From: http://stackoverflow.com/questions/2607853/why-prototype-is-used-header-fi
 #define _PROTOTYPE(function, params) function params
 
 #include <SdFat.h>
+#include "zmodem.h"
+#include "zmodem_zm.h"
 
 extern SdFat sd;
 
-#include <string.h>
 
 // Dylan (monte_carlo_ecm, bitflipper, etc.) - changed serial read/write to macros to try to squeeze 
 // out higher speed
@@ -28,9 +28,32 @@ extern SdFat sd;
 #define readline(timeout) ({ byte _c; ZSERIAL.readBytes(&_c, 1) > 0 ? _c : TIMEOUT; })
 int zdlread2(int);
 #define zdlread(void) ({ int _z; ((_z = readline(Rxtimeout)) & 0140) ? _z : zdlread2(_z); })
-//#define sendline(_c) ZSERIAL.write(char(_c))
-#define sendline(_c) ({ if (ZSERIAL.availableForWrite() > SERIAL_TX_BUFFER_SIZE / 2) ZSERIAL.flush(); ZSERIAL.write(char(_c)); })
-#define zsendline(_z) ({ (_z & 0140 ) ? sendline(_z) : zsendline2(_z); })
+
+template <typename T>
+void zsendline(T z) {
+	if (z & 0140) {
+		sendline(z);
+	}
+	else {
+		zsendline2(z);
+	}
+}
+
+inline void sendline(int c){
+	// Check if buffer is more than half full
+	if (ZSERIAL.availableForWrite() < (SERIAL_TX_BUFFER_SIZE / 2)) {
+		ZSERIAL.flush(); // Wait for outgoing data to complete
+	}
+	ZSERIAL.write(c);
+}
+
+inline void sendline(char c){
+	// Check if buffer is more than half full
+	if (ZSERIAL.availableForWrite() < (SERIAL_TX_BUFFER_SIZE / 2)) {
+		ZSERIAL.flush(); // Wait for outgoing data to complete
+	}
+	ZSERIAL.write(c);
+}
 
 void sendzrqinit(void);
 int wctxpn(const char *name);
@@ -62,7 +85,7 @@ extern int Filcnt;
 // enter the "if" statement's clause
 #define setjmp(...)
 
-#define printf(s, ... ) DSERIAL.println(s);
+#define printf(s, ... ) DSERIAL_PRINTLN(s);
 #define fprintf(...)
 
 // fseek(in, Rxpos, 0)
@@ -83,4 +106,4 @@ void purgeline(void);
 
 void flushmo(void);
 
-#endif
+

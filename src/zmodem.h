@@ -1,15 +1,15 @@
 // From: http://www.raspberryginger.com/jbailey/minix/html/zmodem_8h-source.html
-#ifndef ZMODEM_H
-#define ZMODEM_H
+#pragma once
+
 #include "zmodem_config.h"
-#include "zmodem_fixes.h"
+
 /*
  *   Z M O D E M . H     Manifest constants for ZMODEM
  *    application to application file transfer protocol
  *    05-23-87  Chuck Forsberg Omen Technology Inc
  */
 #define ZPAD '*'        /* 052 Padding character begins frames */
-#define ZDLE 030        /* Ctrl-X Zmodem escape - `ala BISYNC DLE */
+#define ZDLE 030        /* (␘, \x18 Zmodem escape - `ala BISYNC DLE */
 #define ZDLEE (ZDLE^0100)       /* Escaped ZDLE as transmitted */
 #define ZBIN 'A'        /* Binary frame indicator */
 #define ZHEX 'B'        /* HEX frame indicator */
@@ -150,7 +150,7 @@ _PROTOTYPE(int zrbhdr , (char *hdr ));
 _PROTOTYPE(int zrbhdr32 , (char *hdr ));
 _PROTOTYPE(int zrhhdr , (char *hdr ));
 _PROTOTYPE(void zputhex , (int c ));
-_PROTOTYPE(int zsendline2 , (int c ));
+_PROTOTYPE(void zsendline2 , (int c ));
 _PROTOTYPE(int zgethex , (void));
 _PROTOTYPE(int zgeth1 , (void));
 //_PROTOTYPE(int zdlread , (void));
@@ -189,8 +189,6 @@ int wcrx();
 #define RCDO (-3)
 #define Tx_RETRYMAX 10
 #define Rx_RETRYMAX 5
-
-#endif
 
 /* End of ZMODEM.H */
 

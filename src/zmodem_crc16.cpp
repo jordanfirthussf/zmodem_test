@@ -58,11 +58,11 @@
 // warning on line 283 of zmodem_zm.cpp
 // Dylan (monte_carlo_ecm, bitflipper, etc.) - No warning in Arduino IDE 1.6.5
 
-#ifdef ARDUINO
-#define updcrc(cp, crc) ( ( (pgm_read_word(crctab + ((crc >> 8) & 255)) ^ (crc << 8) ) ^ cp))
-#else
-#define updcrc(cp, crc) ( ( (crctab[((crc >> 8) & 255)] ^ (crc << 8) ) ^ cp))
-#endif
+// #ifdef ARDUINO
+#define updcrc(cp, crc) ({ ( (pgm_read_word(crctab + ((crc >> 8) & 255)) ^ (crc << 8) ) ^ cp); })
+// #else
+// #define updcrc(cp, crc) { ( (crctab[((crc >> 8) & 255)] ^ (crc << 8) ) ^ cp); Serial.print("updcrc"); delay(5); };
+// #endif
 
 /*
  * Copyright (C) 1986 Gary S. Brown.  You may use this program, or
