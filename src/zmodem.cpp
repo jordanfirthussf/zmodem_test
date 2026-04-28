@@ -107,7 +107,7 @@ String change_directory(char* param) {
     print_line += "Current directory changed to ";
     print_line += param;
   }
-  return print_line
+  return print_line;
 }
 
 String remove_file(char* param) {
