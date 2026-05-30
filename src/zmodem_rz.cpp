@@ -61,7 +61,6 @@
 #include "zmodem_zm.h"
 #include "zmodem_rz.h"
 
-#ifdef ARDUINO_SMALL_MEMORY_INCLUDE_RZ
 
 #include <stdio.h>
 
@@ -69,7 +68,7 @@
 
 #include "zmodem.h"
 #include "zmodem_zm.h"
-#include "zmodem_crc16.cpp"
+//#include "zmodem_crc16.cpp"
 
 long getfree(void);
 int wcreceive(int argc, char **argp);
@@ -1157,9 +1156,3 @@ void ackbibi(void)
   }
 }
 
-/* End of rz.c */
-
-
-
-
-#endif

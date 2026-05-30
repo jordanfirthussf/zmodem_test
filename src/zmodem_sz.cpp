@@ -19,10 +19,9 @@
 #include "zmodem_zm.h"
 #include "zmodem_sz.h"
 
-#ifdef ARDUINO_SMALL_MEMORY_INCLUDE_SZ
 
 #include "zmodem.h"
-#include "zmodem_crc16.cpp"
+//#include "zmodem_crc16.cpp"
 
 #include <stdio.h>
 
@@ -767,6 +766,3 @@ void saybibi(void) {
   } // for
 } // saybibi
 
-#endif
-
-/* End of sz.c */
