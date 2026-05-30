@@ -80,39 +80,6 @@ char Lastrx;
 char Crcflg;
 uint8_t errors;
 
-// Dylan (monte_carlo_ecm, bitflipper, etc.) - Removing this for release to save
-// memory, only used for debugging
-/*
-char *frametypes[] = {
-  (char *)"Carrier Lost",         // -3
-  (char *)"TIMEOUT",              // -2
-  (char *)"ERROR",                // -1
-#define FTOFFSET 3
-  (char *)"ZRQINIT",
-  (char *)"ZRINIT",
-  (char *)"ZSINIT",
-  (char *)"ZACK",
-  (char *)"ZFILE",
-  (char *)"ZSKIP",
-  (char *)"ZNAK",
-  (char *)"ZABORT",
-  (char *)"ZFIN",
-  (char *)"ZRPOS",
-  (char *)"ZDATA",
-  (char *)"ZEOF",
-  (char *)"ZFERR",
-  (char *)"ZCRC",
-  (char *)"ZCHALLENGE",
-  (char *)"ZCOMPL",
-  (char *)"ZCAN",
-  (char *)"ZFREECNT",
-  (char *)"ZCOMMAND",
-  (char *)"ZSTDERR",
-  (char *)"xxxxx"
-#define FRTYPES 22      // Total number of frame types in this array 
-  //  not including psuedo negative entries 
-};
-*/
 #define badcrc F("Bad CRC");
 
 

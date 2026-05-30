@@ -71,36 +71,36 @@
 #include "zmodem_zm.h"
 #include "zmodem_crc16.cpp"
 
-_PROTOTYPE(long getfree , (void));
-_PROTOTYPE(int wcreceive , (int argc , char **argp ));
-_PROTOTYPE(int wcrxpn , (char *rpn ));
-_PROTOTYPE(int wcrx , ());
-_PROTOTYPE(int wcgetsec , (char *rxbuf , int maxtime ));
-//_PROTOTYPE(int readline , (int timeout ));
-_PROTOTYPE(void purgeline , (void));
-_PROTOTYPE(int procheader , (const char *name ));
-_PROTOTYPE(int putsec , (char *buf , int n ));
-//_PROTOTYPE(void sendline , (int c ));
-_PROTOTYPE(void flushmo , (void));
-_PROTOTYPE(void uncaps , (char *s ));
-_PROTOTYPE(int IsAnyLower , (char *s ));
+long getfree(void);
+int wcreceive(int argc, char **argp);
+int wcrxpn(char *rpn);
+int wcrx();
+int wcgetsec(char *rxbuf, int maxtime);
+//int readline(int timeout);
+void purgeline(void);
+int procheader(const char *name);
+int putsec(char *buf, int n);
+//void sendline(int c);
+void flushmo(void);
+void uncaps(char *s);
+int IsAnyLower(char *s);
 
 // Pete (El Supremo)
 //void zperr();
 
 
-_PROTOTYPE(void canit , (void));
-_PROTOTYPE(void report , (int sct ));
-_PROTOTYPE(int checkpath , (char *name ));
-_PROTOTYPE(int tryz , (void));
-_PROTOTYPE(int rzfiles , (void));
-_PROTOTYPE(int rzfile , (void));
-_PROTOTYPE(void zmputs , (char *s ));
-_PROTOTYPE(int closeit , (void));
-_PROTOTYPE(void ackbibi , (void));
-_PROTOTYPE(void bttyout , (int c ));
-//_PROTOTYPE(int sys2 , (char *s ));
-//_PROTOTYPE(void exec2 , (char *s ));
+void canit(void);
+void report(int sct);
+int checkpath(char *name);
+int tryz(void);
+int rzfiles(void);
+int rzfile(void);
+void zmputs(char *s);
+int closeit(void);
+void ackbibi(void);
+void bttyout(int c);
+//int sys2(char *s);
+//void exec2(char *s);
 
 /*
  * Max value for HOWMANY is 255.

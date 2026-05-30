@@ -10,7 +10,6 @@ From: http://stackoverflow.com/questions/2607853/why-prototype-is-used-header-fi
 ////////////////////////////////////////////////////////
 
 
-#define _PROTOTYPE(function, params) function params
 
 #include <SdFat.h>
 

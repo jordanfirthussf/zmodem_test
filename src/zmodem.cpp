@@ -38,26 +38,3 @@ void zmodem_receive_file() {
   fout.sync();
   fout.close();
 }
-
-
-// Dylan (monte_carlo_ecm, bitflipper, etc.) - This function was added because I found
-// that SERIAL_TX_BUFFER_SIZE was getting overrun at higher baud rates.  This modified
-// Serial.print() function ensures we are not overrunning the buffer by flushing if
-// it gets more than half full.
-
-// size_t DSERIAL_PRINT(const __FlashStringHelper *ifsh)
-// {
-//   PGM_P p = reinterpret_cast<PGM_P>(ifsh);
-//   size_t n = 0;
-//   while (1) {
-//     \
-//     unsigned char c = pgm_read_byte(p++);
-//     if (c == 0) break;
-//     if (DSERIAL_AVAILABLE_FOR_WRITE() > SERIAL_TX_BUFFER_SIZE / 2) ASERIAL.flush();
-//     if (DSERIAL_WRITE(c)) n++;
-//     else break;
-//   }
-//   return n;
-// }
-
-// #define DSERIAL_PRINTLN(_p) ({ DSERIAL_PRINT(_p); DSERIAL_WRITE("\r\n"); })
