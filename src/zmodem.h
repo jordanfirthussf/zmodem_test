@@ -192,16 +192,8 @@ int wcrx();
 #define Tx_RETRYMAX 10
 #define Rx_RETRYMAX 5
 
-int count_files(int *file_count, long *byte_count);
-void directory_listing();
-void print_working_directory();
-void change_directory(char* param);
-void remove_file(char* param);
-void mkdir(char* param);
-void remove_directory(char* param);
 void zmodem_send_file(char* param);
 void zmodem_receive_file();
-void help(void);
 
 
 // Dylan (monte_carlo_ecm, bitflipper, etc.) - The way I made this sketch in any way operate on
