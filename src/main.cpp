@@ -77,43 +77,6 @@ void loop() {
     param = &cmd[strlen(cmd)];
   }
 
-  strupr(cmd);
-  // DSERIAL_PRINTLN();
-  // DSERIAL_PRINTLN(command);
-  // DSERIAL_PRINTLN(parameter);
-
-  if (!strcmp_P(cmd, PSTR("HELP"))) {
-    
-    help();
-    
-  } else if (!strcmp_P(cmd, PSTR("DIR")) || !strcmp_P(cmd, PSTR("LS"))) {
-    directory_listing();
- 
-  }
-
-  else if (!strcmp_P(cmd, PSTR("PWD"))) {
-    print_working_directory();
-  
-  } else if (!strcmp_P(cmd, PSTR("CD"))) {
-    change_directory(param);
-
-#ifdef ARDUINO_SMALL_MEMORY_INCLUDE_FILE_MGR
-  } else if (!strcmp_P(cmd, PSTR("DEL")) || !strcmp_P(cmd, PSTR("RM"))) {
-    remove_file(param);
-  } else if (!strcmp_P(cmd, PSTR("MD")) || !strcmp_P(cmd, PSTR("MKDIR"))) {
-    mkdir(param);
-  } else if (!strcmp_P(cmd, PSTR("RD")) || !strcmp_P(cmd, PSTR("RMDIR"))) {
-    remove_directory(param);
-#endif
-#ifdef ARDUINO_SMALL_MEMORY_INCLUDE_SZ
-  } else if (!strcmp_P(cmd, PSTR("SZ"))) {
-//    Filcnt = 0;
     zmodem_send_file(param);
-#endif
-#ifdef ARDUINO_SMALL_MEMORY_INCLUDE_RZ
-  } else if (!strcmp_P(cmd, PSTR("RZ"))) {
-    zmodem_receive_file();
-#endif
-  }
 
 }
