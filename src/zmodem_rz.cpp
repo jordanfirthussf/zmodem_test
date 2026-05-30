@@ -55,8 +55,11 @@
  *  USG UNIX (3.0) ioctl conventions courtesy  Jeff Martin
  */
 
+#define ARDUINO_RECV
 #include "zmodem_config.h"
 #include "zmodem_fixes.h"
+#include "zmodem_zm.h"
+#include "zmodem_rz.h"
 
 #ifdef ARDUINO_SMALL_MEMORY_INCLUDE_RZ
 
@@ -75,7 +78,7 @@ _PROTOTYPE(int wcrx , ());
 _PROTOTYPE(int wcgetsec , (char *rxbuf , int maxtime ));
 //_PROTOTYPE(int readline , (int timeout ));
 _PROTOTYPE(void purgeline , (void));
-_PROTOTYPE(int procheader , (char *name ));
+_PROTOTYPE(int procheader , (const char *name ));
 _PROTOTYPE(int putsec , (char *buf , int n ));
 //_PROTOTYPE(void sendline , (int c ));
 _PROTOTYPE(void flushmo , (void));
@@ -307,7 +310,7 @@ DSERIAL_PRINTLN(F("fubar 5"));
 DSERIAL_PRINT("rz: ready to receive ");
 DSERIAL_PRINTLN(Pathname);
 #ifndef ARDUINO
-    if ((fout=fopen(Pathname, "w")) == NULL)
+    if ((fout=fopen(Pathname, (char*)"w")) == NULL)
 #else
     if (!fout.open(Pathname, O_WRITE | O_CREAT | O_AT_END))
 #endif
@@ -553,12 +556,22 @@ humbug:
 /*
  * Process incoming file information header
  */
-int procheader(char *name)
+int procheader(const char *name)
 {
-  char *openmode, *p;
+  char *openmode;
+  const char *p;
+  static char namebuf[PATHLEN];
+
+  if (name && *name) {
+    strncpy(namebuf, name, PATHLEN);
+    namebuf[PATHLEN-1] = 0;
+  } else {
+    namebuf[0] = 0;
+  }
+  char *n = namebuf;
 
   /* set default parameters and overrides */
-  openmode = "w";
+  openmode = (char*)"w";
   Thisbinary = (!Rxascii) || Rxbinary;
   if (Lzmanag)
     zmanag = Lzmanag;
@@ -571,17 +584,17 @@ int procheader(char *name)
   if (zconv == ZCBIN)     /* Remote Binary override */
     Thisbinary = TRUE;
   else if (zmanag == ZMAPND)
-    openmode = "a";
+    openmode = (char*)"a";
 
 #ifndef BIX
   /* Check for existing file */
 #ifndef ARDUINO
-  if (!Rxclob && (zmanag&ZMMASK) != ZMCLOB && (fout=fopen(name, "r"))) {
+  if (!Rxclob && (zmanag&ZMMASK) != ZMCLOB && (fout=fopen(n, "r"))) {
     fclose(fout);  
     return ERROR;
   }
 #else
-//  if (!Rxclob && (zmanag&ZMMASK) != ZMCLOB && sd.exists(name)) {
+//  if (!Rxclob && (zmanag&ZMMASK) != ZMCLOB && sd.exists(n)) {
 //    return ERROR;
 //  }
 #endif
@@ -591,7 +604,7 @@ int procheader(char *name)
   //Filemode = 0; 
   //Modtime = 0L;
 
-  p = name + 1 + strlen(name);
+  p = n + 1 + strlen(n);
   if (*p) {       /* file coming from Unix or DOS system */
 //    sscanf(p, "%ld%lo%o", &Bytesleft, &Modtime, &Filemode);
     Bytesleft = atol(p);
@@ -602,7 +615,7 @@ int procheader(char *name)
 #endif
     if (Verbose) {
       fprintf(stderr,  "\nIncoming: %s %ld %lo %o\n",
-      name, Bytesleft, Modtime, Filemode);
+      n, Bytesleft, Modtime, Filemode);
     }
   }
 
@@ -613,35 +626,36 @@ int procheader(char *name)
 #else
 
   else {          /* File coming from CP/M system */
-    for (p=name; *p; ++p)           /* change / to _ */
-      if ( *p == '/')
-        *p = '_';
+    for (char *q=n; *q; ++q)           /* change / to _ */
+      if ( *q == '/')
+        *q = '_';
 
-    if ( *--p == '.')               /* zap trailing period */
-      *p = 0;
+    char *q = n + strlen(n);
+    if ( q > n && *--q == '.')               /* zap trailing period */
+      *q = 0;
   }
 
 #ifndef vax11c
-/*  if (!Zmodem && MakeLCPathname && !IsAnyLower(name)
+/*  if (!Zmodem && MakeLCPathname && !IsAnyLower(n)
     && !(Filemode&UNIXFILE))
-    uncaps(name); */
+    uncaps(n); */
 #endif
 
-    strcpy(Pathname, name);
+    strcpy(Pathname, n);
     if (Verbose) {
       fprintf(stderr,  "Receiving %s %s %s\n",
-      name, Thisbinary?"BIN":"ASCII", openmode);
+      n, Thisbinary?"BIN":"ASCII", openmode);
     }
-//    if (checkpath(name)) {
+//    if (checkpath(n)) {
 //      canit();
 //      return ERROR;
 //    }
 //    if (Nflag)
-//      name = "/dev/null";
+//      n = "/dev/null";
 #ifndef vax11c
 #ifdef OMEN
-    if (name[0] == '!' || name[0] == '|') {
-      if ( !(fout = popen(name+1, "w"))) {
+    if (n[0] == '!' || n[0] == '|') {
+      if ( !(fout = popen(n+1, (char*)"w"))) {
         return ERROR;
       }
       Topipe = -1;  
@@ -651,9 +665,9 @@ int procheader(char *name)
 #endif
 
 #ifndef ARDUINO
-    fout = fopen(name, openmode);
+    fout = fopen(n, openmode);
 #else
-    fout.open(name, O_WRITE | O_CREAT | O_AT_END);
+    fout.open(n, O_WRITE | O_CREAT | O_AT_END);
     rxbytes = fout.fileSize();
 
 #endif

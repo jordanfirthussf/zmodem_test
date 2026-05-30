@@ -4,9 +4,9 @@
 
 #define ZATTNLEN 4
 
-
-#include "zmodem.h"
+#include "zmodem_config.h"
 #include "zmodem_fixes.h"
+#include "zmodem.h"
 
 void sendline(char c);
 

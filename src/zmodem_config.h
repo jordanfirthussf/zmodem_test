@@ -68,7 +68,5 @@
 
 // Uncomment the following macro to build a version with SZ enabled.
 #define ARDUINO_SMALL_MEMORY_INCLUDE_SZ
-
-// Uncomment the following macro to build a version with RZ enabled
-// #define ARDUINO_SMALL_MEMORY_INCLUDE_RZ
+#define ARDUINO_SMALL_MEMORY_INCLUDE_RZ
 

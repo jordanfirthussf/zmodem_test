@@ -1,6 +1,12 @@
+#include "zmodem_config.h"
 #include "zmodem.h"
 
 
+
+#include "zmodem_sz.h"
+
+int Filesleft;
+long Totalleft;
 
 void zmodem_send_file(char* param) {
    if (!fout.open(param, O_READ)) {
@@ -18,6 +24,8 @@ void zmodem_send_file(char* param) {
     fout.close();
   }
 }
+
+#include "zmodem_rz.h"
 
 void zmodem_receive_file() {
   ASERIAL.println(F("Receiving file..."));

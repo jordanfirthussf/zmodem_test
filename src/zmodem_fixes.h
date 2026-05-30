@@ -13,8 +13,6 @@ From: http://stackoverflow.com/questions/2607853/why-prototype-is-used-header-fi
 #define _PROTOTYPE(function, params) function params
 
 #include <SdFat.h>
-#include "zmodem.h"
-#include "zmodem_zm.h"
 
 extern SdFat sd;
 
@@ -28,16 +26,6 @@ extern SdFat sd;
 #define readline(timeout) ({ byte _c; ZSERIAL.readBytes(&_c, 1) > 0 ? _c : TIMEOUT; })
 int zdlread2(int);
 #define zdlread(void) ({ int _z; ((_z = readline(Rxtimeout)) & 0140) ? _z : zdlread2(_z); })
-
-template <typename T>
-void zsendline(T z) {
-	if (z & 0140) {
-		sendline(z);
-	}
-	else {
-		zsendline2(z);
-	}
-}
 
 inline void sendline(int c){
 	// Check if buffer is more than half full
@@ -53,6 +41,18 @@ inline void sendline(char c){
 		ZSERIAL.flush(); // Wait for outgoing data to complete
 	}
 	ZSERIAL.write(c);
+}
+
+void zsendline2(int c);
+
+template <typename T>
+void zsendline(T z) {
+	if (z & 0140) {
+		sendline(z);
+	}
+	else {
+		zsendline2(z);
+	}
 }
 
 void sendzrqinit(void);

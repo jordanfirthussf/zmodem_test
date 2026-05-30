@@ -16,14 +16,12 @@
 
 #include "zmodem_config.h"
 #include "zmodem_fixes.h"
+#include "zmodem_zm.h"
+#include "zmodem_sz.h"
 
 #ifdef ARDUINO_SMALL_MEMORY_INCLUDE_SZ
 
-// #define xsendline(c) sendline(c)
-// #define xsendline sendline
-
 #include "zmodem.h"
-#include "zmodem_zm.h"
 #include "zmodem_crc16.cpp"
 
 #include <stdio.h>
@@ -38,8 +36,6 @@ unsigned Txwcnt;        /* Counter used to space ack requests */
 #define Lrxpos rxbytes
 extern long Lrxpos;            /* Receiver's last reported offset */
 
-int Filesleft = 0;
-long Totalleft = 0L;
 
 /*
  * Attention string to be executed by receiver to interrupt streaming data

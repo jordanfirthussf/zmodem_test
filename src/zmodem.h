@@ -167,12 +167,10 @@ void vfile();
 #define vfile(a, ... )
 #endif
 
-_PROTOTYPE(void bibi , (int n ));
-_PROTOTYPE(int wcs , (const char *oname));
-_PROTOTYPE(void saybibi, (void));
-
-int wctxpn(char *name,SdFile *file);
-int wcrx();
+// int wcs(const char *oname); moved to zmodem_sz.h
+// void saybibi(void); moved to zmodem_sz.h
+// int wctxpn(char *name,SdFile *file); moved to zmodem_sz.h
+// int wcrx(); moved to zmodem_rz.h
 
 /* Ward Christensen / CP/M parameters - Don't change these! */
 #define ENQ 005
@@ -192,8 +190,8 @@ int wcrx();
 #define Tx_RETRYMAX 10
 #define Rx_RETRYMAX 5
 
-void zmodem_send_file(char* param);
-void zmodem_receive_file();
+#include "zmodem_sz.h"
+#include "zmodem_rz.h"
 
 
 // Dylan (monte_carlo_ecm, bitflipper, etc.) - The way I made this sketch in any way operate on

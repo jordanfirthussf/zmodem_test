@@ -7,9 +7,9 @@
 
 #include "zmodem_config.h"
 #include "zmodem_fixes.h"
-
-#include "zmodem.h"
 #include "zmodem_zm.h"
+#include "zmodem_sz.h"
+#include "zmodem_rz.h"
 #include <SdFat.h>
 //#include <SdFatUtil.h>
 
@@ -19,6 +19,11 @@ SdFs sd;
 #define error(s) sd.errorHalt(s)
 
 SdFile fout;
+
+void help() {
+  ASERIAL.println(F("SZ <file> - Send file"));
+  ASERIAL.println(F("RZ        - Receive file"));
+}
 
 void setup() {
   
@@ -70,7 +75,7 @@ void loop() {
   }
    
   char* param = strchr(cmd, 32);
-  if (param > 0) {
+  if (param != NULL) {
     *param = 0;
     param = param + 1;
   } else {

@@ -24,10 +24,11 @@
  */
 
 #ifdef ARDUINO
+#include "zmodem_config.h"
 #include "zmodem_fixes.h"
+#include "zmodem_zm.h"
 #include "zmodem.h"
 #include "zmodem_crc16.cpp"
-#include "zmodem_zm.h"
 #else
 #ifndef CANFDX
 #include "zmodem.h"
