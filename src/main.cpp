@@ -42,7 +42,6 @@ ASERIAL.println(F("About to change directory"));
   if(!sd.chdir((const char *)("/"))) sd.errorHalt(F("sd.chdir"));
 ASERIAL.println(F("SdCard setup complete"));
 
-  help();
 }
 
 void loop() {
@@ -70,7 +69,7 @@ void loop() {
   }
    
   char* param = strchr(cmd, 32);
-  if (param > 0) {
+  if (param != nullptr) {
     *param = 0;
     param = param + 1;
   } else {

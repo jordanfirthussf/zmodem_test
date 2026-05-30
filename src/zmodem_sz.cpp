@@ -123,27 +123,27 @@ long Lastsync;          /* Last offset to which we got a ZRPOS */
 uint8_t Beenhereb4;         /* How many times we've been ZRPOS'd same place */
 
 // Pete (El Supremo)
-_PROTOTYPE(int wcs , (const char *oname ));
-_PROTOTYPE(int wctxpn , (const char *name));
+int wcs(const char *oname);
+int wctxpn(const char *name);
 
-_PROTOTYPE(int wctx , (long flen ));
-_PROTOTYPE(int wcputsec , (char *buf , int sectnum , int cseclen ));
-_PROTOTYPE(int filbuf , (char *buf , int count ));
-_PROTOTYPE(int zfilbuf , (void));
-_PROTOTYPE(void flushmo , (void));
-_PROTOTYPE(void purgeline , (void));
-_PROTOTYPE(void canit , (void));
+int wctx(long flen);
+int wcputsec(char *buf, int sectnum, int cseclen);
+int filbuf(char *buf, int count);
+int zfilbuf(void);
+void flushmo(void);
+void purgeline(void);
+void canit(void);
 
 //void zperr();
 // #define zperr(a, ... )
 
-_PROTOTYPE(int sendzsinit , (void));
-_PROTOTYPE(int zsendfile , (char *buf , int blen ));
-_PROTOTYPE(int zsendfdata , (void));
-_PROTOTYPE(int getinsync , (int flag ));
-_PROTOTYPE(void saybibi , (void));
-//_PROTOTYPE(void bttyout , (int c ));
-_PROTOTYPE(int zsendcmd , (char *buf , int blen ));
+int sendzsinit(void);
+int zsendfile(char *buf, int blen);
+int zsendfdata(void);
+int getinsync(int flag);
+void saybibi(void);
+//void bttyout(int c);
+int zsendcmd(char *buf, int blen);
 
 
 #ifndef ARDUINO

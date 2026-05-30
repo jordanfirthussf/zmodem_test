@@ -131,34 +131,34 @@ extern char Attn[ZATTNLEN+1];   /* Attention string rx sends to tx on err */
 //#endif
 
 /* crctab.c */
-_PROTOTYPE(long UPDC32 , (int b , long c ));
+long UPDC32(int b, long c);
 
 /* rbsb.c */
 #ifndef ARDUINO
-_PROTOTYPE(void from_cu , (void));
-_PROTOTYPE(void cucheck , (void));
-_PROTOTYPE(int rdchk , (int f ));
-_PROTOTYPE(int rdchk , (int f ));
-_PROTOTYPE(void sendbrk , (void));
+void from_cu(void);
+void cucheck(void);
+int rdchk(int f);
+int rdchk(int f);
+void sendbrk(void);
 #endif
 /* zm.c */
 
-_PROTOTYPE(void zsbhdr , (int type , char *hdr ));
-_PROTOTYPE(void zshhdr , (int type , char *hdr ));
-_PROTOTYPE(void zsdata , (char *buf , int length , int frameend ));
-_PROTOTYPE(int zrdata , (char *buf , int length ));
-_PROTOTYPE(int zgethdr , (char *hdr , int eflag ));
-_PROTOTYPE(int zrbhdr , (char *hdr ));
-_PROTOTYPE(int zrbhdr32 , (char *hdr ));
-_PROTOTYPE(int zrhhdr , (char *hdr ));
-_PROTOTYPE(void zputhex , (int c ));
-_PROTOTYPE(void zsendline2 , (int c ));
-_PROTOTYPE(int zgethex , (void));
-_PROTOTYPE(int zgeth1 , (void));
-//_PROTOTYPE(int zdlread , (void));
-_PROTOTYPE(int noxrd7 , (void));
-_PROTOTYPE(void stohdr , (long pos ));
-_PROTOTYPE(long rclhdr , (char *hdr ));
+void zsbhdr(int type, char *hdr);
+void zshhdr(int type, char *hdr);
+void zsdata(char *buf, int length, int frameend);
+int zrdata(char *buf, int length);
+int zgethdr(char *hdr, int eflag);
+int zrbhdr(char *hdr);
+int zrbhdr32(char *hdr);
+int zrhhdr(char *hdr);
+void zputhex(int c);
+void zsendline2(int c);
+int zgethex(void);
+int zgeth1(void);
+//int zdlread(void);
+int noxrd7(void);
+void stohdr(long pos);
+long rclhdr(char *hdr);
 
 /* rz.c sz.c */
 #ifndef ARDUINO
@@ -167,9 +167,9 @@ void vfile();
 #define vfile(a, ... )
 #endif
 
-_PROTOTYPE(void bibi , (int n ));
-_PROTOTYPE(int wcs , (const char *oname));
-_PROTOTYPE(void saybibi, (void));
+void bibi(int n);
+int wcs(const char *oname);
+void saybibi(void);
 
 int wctxpn(char *name,SdFile *file);
 int wcrx();
