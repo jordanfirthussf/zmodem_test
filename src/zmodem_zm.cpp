@@ -25,7 +25,6 @@
 
 #ifdef ARDUINO
 #include "zmodem_config.h"
-#include "zmodem_fixes.h"
 #include "zmodem_zm.h"
 #include "zmodem.h"
 //#include "zmodem_crc16.cpp"
@@ -55,9 +54,9 @@ char Rxhdr[4];          /* Received header */
 char Txhdr[4];          /* Transmitted header */
 long Rxpos;             /* Received file position */
 long Txpos;             /* Transmitted file position */
-int8_t Txfcs32;            /* TRUE means send binary frames with 32 bit FCS */
-int8_t Crc32t;             /* Display flag indicating 32 bit CRC being sent */
-int8_t Crc32;              /* Display flag indicating 32 bit CRC being received */
+int8_t Txfcs32;            /* TRUE means send binary frames with 32-bit FCS */
+int8_t Crc32tx;             /* Display flag indicating 32-bit CRC being sent */
+int8_t Crc32rx;              /* Display flag indicating 32-bit CRC being received */
 //int Znulls;             /* Number of nulls to send at beginning of ZDATA hdr */
 char Attn[ZATTNLEN+1];  /* Attention string rx sends to tx on err */
 
@@ -94,16 +93,16 @@ void zsbhdr(int type, char *hdr)
   vfile(F("zsbhdr: %s %lx"), frametypes[type+FTOFFSET], rclhdr(hdr));
 /*  if (type == ZDATA)
     for (n = Znulls; --n >=0; )
-      xsendline(0);
+      sendline(0);
 */
-  xsendline(ZPAD); 
-  xsendline(ZDLE);
+  sendline(ZPAD);
+  sendline(ZDLE);
 //Pete (El Supremo) This looks wrong but it is correct - the code fails if == is used
-  if ((Crc32t = Txfcs32)) {
+  if ((Crc32tx = Txfcs32)) {
     int n;
-    UNSL long crc;
+    unsigned long crc;
   
-    xsendline(ZBIN32);
+    sendline(ZBIN32);
     zsendline(type);
     crc = 0xFFFFFFFFL; 
     crc = UPDC32(type, crc);
@@ -121,7 +120,7 @@ void zsbhdr(int type, char *hdr)
     int n;
     unsigned short crc;
     
-    xsendline(ZBIN); 
+    sendline(ZBIN);
     zsendline(type); 
     crc = updcrc(type, 0);
 
@@ -150,7 +149,7 @@ void zshhdr(int type,char *hdr)
   sendline(ZDLE); 
   sendline(ZHEX);
   zputhex(type);
-  Crc32t = 0;
+  Crc32tx = 0;
 
   crc = updcrc(type, 0);
   for (n=4; --n >= 0; ++hdr) {
@@ -190,21 +189,21 @@ void zsdata(char *buf,int length,int frameend)
 
   // vfile(F("zsdata: %d %s"), length, Zendnames[(frameend-ZCRCE)&3]);
 
-  if (Crc32t) {
+  if (Crc32tx) {
     int c;
-    UNSL long crc;
+    unsigned long crc;
   
     crc = 0xFFFFFFFFL;
     for (;--length >= 0; ++buf) {
       c = *buf & 0377;
       if (c & 0140)
-        xsendline(lastsent = c);
+        sendline(lastsent = c);
       else
         zsendline(c);
       crc = UPDC32(c, crc);
     }
-    xsendline(ZDLE); 
-    xsendline(frameend);
+    sendline(ZDLE);
+    sendline(frameend);
     crc = UPDC32(frameend, crc);
   
     crc = ~crc;
@@ -223,8 +222,8 @@ void zsdata(char *buf,int length,int frameend)
       crc = updcrc((0377 & *buf), crc);
     }
 
-    xsendline(ZDLE);
-    xsendline(frameend);
+    sendline(ZDLE);
+    sendline(frameend);
     crc = updcrc(frameend, crc);
 
     crc = updcrc(0,updcrc(0,crc));
@@ -232,7 +231,7 @@ void zsdata(char *buf,int length,int frameend)
     zsendline(crc);
   }
   if (frameend == ZCRCW) {
-    xsendline(XON);  
+    sendline(XON);
     flushmo();
   }
 }
@@ -249,7 +248,7 @@ int zrdata(char *buf,int length)
   int d;
 
   if (Rxframeind == ZBIN32) {
-    UNSL long crc;
+    unsigned long crc;
   
     crc = 0xFFFFFFFFL;  
     Rxcount = 0;  
@@ -440,16 +439,16 @@ splat:
     goto fifi;
   case ZBIN:
     Rxframeind = ZBIN;  
-    Crc32 = FALSE;
+    Crc32rx = FALSE;
     c =  zrbhdr(hdr);
     break;
   case ZBIN32:
-    Crc32 = Rxframeind = ZBIN32;
+    Crc32rx = Rxframeind = ZBIN32;
     c =  zrbhdr32(hdr);
     break;
   case ZHEX:
     Rxframeind = ZHEX;  
-    Crc32 = FALSE;
+    Crc32rx = FALSE;
     c =  zrhhdr(hdr);
     break;
   case CAN:
@@ -526,7 +525,7 @@ int zrbhdr(char *hdr)
 int zrbhdr32(char *hdr)
 {
   int c, n;
-  UNSL long crc;
+  unsigned long crc;
 
   if ((c = zdlread()) & ~0377)
     return c;
@@ -613,49 +612,60 @@ int zrhhdr(char *hdr)
   return Rxtype;
 }
 
+
 /* Send a byte as two hex digits */
-/*void zputhex(int c)
-{
-  static char     digits[]  = "0123456789abcdef";
-
-  if (Verbose>8)
-    vfile(F("zputhex: %02X"), c);
-  sendline(digits[(c&0xF0)>>4]);
-  sendline(digits[(c)&0xF]);
-} */
-
-static constexpr char digits[17] = "0123456789abcdef";
-
+/*void zputhex(int c) */
 void zputhex(int c)
 {
-//  static char     digits[]  = "0123456789abcdef";
+  static constexpr char digits[17] = "0123456789abcdef";
 
-  if (Verbose>8)
+  if constexpr (Verbose>8)
     vfile(F("zputhex: %02X"), c);
   sendline(pgm_read_byte(digits+((c&0xF0)>>4)));
   sendline(pgm_read_byte(digits+((c)&0xF)));
 }
 
+void sendline(char c) {
+  sendline((int) c);
+}
+
+void sendline(int c){
+  // Check if buffer is more than half full
+  if (ZSERIAL.availableForWrite() < (SERIAL_TX_BUFFER_SIZE / 2)) {
+    ZSERIAL.flush(); // Wait for outgoing data to complete
+  }
+  ZSERIAL.write(c);
+}
+
+
 /*
  * Send character c with ZMODEM escape sequence encoding.
  *  Escape XON, XOFF. Escape CR following @ (Telenet net escape)
  */
-void zsendline2(int c)
-{
+void zsendline(char c) {
+  zsendline((int)c);
+}
 
-  /* Quick check for non control characters */
+void zsendline(int c)
+{
+  /* check for non-control characters */
   if (c & 0140)
-    xsendline(lastsent = c);
+    sendline(lastsent = c);
+
   else {
     switch (c &= 0377) {
     case ZDLE:
-      xsendline(ZDLE);
-      xsendline (lastsent = (c ^= 0100));
+      sendline(ZDLE);
+      sendline (lastsent = (c ^= 0100));
       break;
+
     case 015: // CR
     case 0215: //
-      if (!Zctlesc && (lastsent & 0177) != '@')
-        goto sendit;
+      if (!Zctlesc && (lastsent & 0177) != '@') {
+        sendline(lastsent = c);
+      }
+        break;
+
       /* **** FALL THRU TO **** */
     case 020: // DLE
     case 021: // DC1
@@ -663,17 +673,18 @@ void zsendline2(int c)
     case 0220: // hex 8D
     case 0221: // '
     case 0223: // "
-      xsendline(ZDLE);
+      sendline(ZDLE);
       c ^= 0100;
-sendit:
-      xsendline(lastsent = c);
+// sendit:
+      sendline(lastsent = c);
       break;
+
     default:
       if (Zctlesc && ! (c & 0140)) {
-        xsendline(ZDLE);
+        sendline(ZDLE);
         c ^= 0100;
       }
-      xsendline(lastsent = c);
+      sendline(lastsent = c);
     }
   }
 }
@@ -709,10 +720,13 @@ int zgethex(void)
  * Read a byte, checking for ZMODEM escape encoding
  *  including CAN*5 which represents a quick abort
  */
-int zdlread2(int c)
-{
+int zdlread(void){
+  int c;
+
 again:
   // Quick check for non control characters
+  if ((c = readline(Rxtimeout)) < 0)
+    return c;
 
   switch (c) {
   case ZDLE:
@@ -721,13 +735,9 @@ again:
   case 0223:
   case 021:
   case 0221:
-    if ((c = readline(Rxtimeout)) & 0140)
-      return c;  
     goto again;
   default:
     if (Zctlesc && !(c & 0140)) {
-      if ((c = readline(Rxtimeout)) & 0140)
-        return c;
       goto again;
     }
     return c;
@@ -861,5 +871,24 @@ void canit(void)
   ZSERIAL.flush();
 }
 
+int readline(int timeout) {
+  long then;
+  unsigned char c;
+
+  then = millis();
+  while(ZSERIAL.available() < 1) {
+    if(millis() - then > (unsigned int)timeout*10UL) {
+      //DSERIAL.println("");
+      return(TIMEOUT);
+    }
+  }
+  c = ZSERIAL.read();
+  //DSERIAL.write(c);
+  //DSERIAL.print(" ");
+  return(c);
+}
+
+
 /* End of zm.c */
 #endif
+

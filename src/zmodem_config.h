@@ -2,6 +2,19 @@
 
 #define Progname F("Arduino ZModem V3.0")
 
+// tx buffer, default to 1024, can override
+#ifndef TXBSIZE
+	#define TXBSIZE 1024 // must be power of 2
+#endif
+
+#define SERIAL_TX_BUFFER_SIZE 128
+
+// Dylan (monte_carlo_ecm, bitflipper, etc.) - changed serial read/write to macros to try to squeeze
+// out higher speed
+
+#define READCHECK
+#define TYPICAL_SERIAL_TIMEOUT 1200
+
 #define SD_SEL 5 // Thing Plus C
 // #define SD_SEL 21 // XIAO ESP32S3
 

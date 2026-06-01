@@ -5,7 +5,6 @@
 #define ZATTNLEN 4
 
 #include "zmodem_config.h"
-#include "zmodem_fixes.h"
 #include "zmodem.h"
 
 void sendline(char c);
@@ -23,8 +22,8 @@ extern char Txhdr[4];          /* Transmitted header */
 extern long Rxpos;             /* Received file position */
 extern long Txpos;             /* Transmitted file position */
 extern int8_t Txfcs32;            /* TRUE means send binary frames with 32 bit FCS */
-extern int8_t Crc32t;             /* Display flag indicating 32 bit CRC being sent */
-extern int8_t Crc32;              /* Display flag indicating 32 bit CRC being received */
+extern int8_t Crc32tx;             /* Display flag indicating 32 bit CRC being sent */
+extern int8_t Crc32rx;              /* Display flag indicating 32 bit CRC being received */
 //extern int Znulls;             /* Number of nulls to send at beginning of ZDATA hdr */
 extern char Attn[ZATTNLEN + 1];  /* Attention string rx sends to tx on err */
 
@@ -36,9 +35,9 @@ extern uint8_t Not8bit;         /* Seven bits seen on header */
 extern uint32_t Baudrate;
 // #define xsendline(c) sendline(c)
 
-inline void xsendline(int c) {
-	sendline(c);
-}
+// inline void xsendline(int c) {
+// 	sendline(c);
+// }
 //int readline(int timeout);
 
 #define OK 0
@@ -84,5 +83,12 @@ extern uint8_t errors;
 // This is declared in the main sketch .ino
 //extern char *Progname;
 
-void zsendline2(int c);
+void zsendline(int c);
+void zsendline(char c);
+
+void sendline(int c);
+void sendline(char c);
+
+int readline(int timeout);
+int zdlread(void);
 

@@ -57,14 +57,13 @@
 
 #define ARDUINO_RECV
 #include "zmodem_config.h"
-#include "zmodem_fixes.h"
 #include "zmodem_zm.h"
 #include "zmodem_rz.h"
 
 
 #include <stdio.h>
 
-#define xsendline(c) sendline(c)
+// #define xsendline(c) sendline(c)
 
 #include "zmodem.h"
 #include "zmodem_zm.h"
@@ -225,7 +224,7 @@ void bibi(int n)
   if (Zmodem)
     zmputs(Attn);
   canit(); 
-  mode(0);
+  // mode(0);
   fprintf(stderr, "rz: caught signal %d; exiting\n", n);
   cucheck();
   exit(128+n);
@@ -255,7 +254,7 @@ int wcreceive(int argc, char **argp)
 //int argc;
 //char **argp;
 {
-  register c;
+  int c;
 
   if (Batch || argc==0) {
     Crcflg=1;
@@ -356,7 +355,7 @@ int Firstsec;
 int wcrxpn(char *rpn)
 /* receive a pathname */
 {
-  register c;
+  int c;
 
 #ifdef NFGVMIN
   readline(1);
@@ -813,7 +812,7 @@ DSERIAL_PRINTLN(F("tryz got ZFILE"));
       ztrans = Rxhdr[ZF2];
       tryzhdrtype = ZRINIT;
       c = zrdata(secbuf, SECBUF_LEN);
-      mode(3);
+      // mode(3);
       if (c == GOTCRCW)
         return ZFILE;
       zshhdr(ZNAK, Txhdr);
@@ -1109,7 +1108,7 @@ void zmputs(char *s)
 #endif
       continue;
     case '\335':
-      sendbrk(); 
+      // sendbrk();
       continue;
     default:
       sendline(c);

@@ -2,8 +2,20 @@
 #pragma once
 
 #include "zmodem_config.h"
-#include "zmodem_fixes.h"
 #include <SdFat.h>
+
+#define fprintf(...)
+// Handle the calls to exit
+#define exit(n)
+
+
+#define sleep(x) delay((x)*1000L)
+#define signal(x,y)
+
+#define ARDUINO_RECV
+
+
+void flushmo(void);
 
 /*
  *   Z M O D E M . H     Manifest constants for ZMODEM
@@ -124,8 +136,8 @@ extern char Txhdr[4];   /* Transmitted header */
 extern long Rxpos;      /* Received file position */
 extern long Txpos;      /* Transmitted file position */
 extern int8_t Txfcs32;         /* TURE means send binary frames with 32 bit FCS */
-extern int8_t Crc32t;          /* Display flag indicating 32 bit CRC being sent */
-extern int8_t Crc32;           /* Display flag indicating 32 bit CRC being received */
+extern int8_t Crc32tx;          /* Display flag indicating 32 bit CRC being sent */
+extern int8_t Crc32rx;           /* Display flag indicating 32 bit CRC being received */
 //extern int Znulls;          /* Number of nulls to send at beginning of ZDATA hdr */
 extern char Attn[ZATTNLEN+1];   /* Attention string rx sends to tx on err */
 //#endif
@@ -134,13 +146,13 @@ extern char Attn[ZATTNLEN+1];   /* Attention string rx sends to tx on err */
 long UPDC32(int b, long c);
 
 /* rbsb.c */
-#ifndef ARDUINO
-void from_cu(void);
-void cucheck(void);
-int rdchk(int f);
-int rdchk(int f);
-void sendbrk(void);
-#endif
+// #ifndef ARDUINO
+// void from_cu(void);
+// void cucheck(void);
+// int rdchk(int f);
+// int rdchk(int f);
+// void sendbrk(void);
+// #endif
 /* zm.c */
 
 void zsbhdr(int type, char *hdr);
@@ -152,7 +164,7 @@ int zrbhdr(char *hdr);
 int zrbhdr32(char *hdr);
 int zrhhdr(char *hdr);
 void zputhex(int c);
-void zsendline2(int c);
+void zsendline(int c);
 int zgethex(void);
 int zgeth1(void);
 //int zdlread(void);

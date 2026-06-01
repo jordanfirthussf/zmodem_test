@@ -5,17 +5,12 @@
  *  Sz uses buffered I/O to greatly reduce CPU time compared to UMODEM.
  *
  *  USG UNIX (3.0) ioctl conventions courtesy Jeff Martin
- *
- *  2.1x hacks to avoid VMS fseek() bogosity, allow input from pipe
- *     -DBADSEEK -DTXBSIZE=32768  
- *  2.x has mods for VMS flavor
- *
- * 1.34 implements tx backchannel garbage count and ZCRCW after ZRPOS
- * in accordance with the 7-31-87 ZMODEM Protocol Description
  */
 
+
+void sendzrqinit(void);
+
 #include "zmodem_config.h"
-#include "zmodem_fixes.h"
 #include "zmodem_zm.h"
 #include "zmodem_sz.h"
 
@@ -423,11 +418,13 @@ int zfilbuf(void)
   return n;
 }
 
+
+
 /* Send file name and related info */
 int zsendfile(char *buf, int blen)
 {
   int c;
-  UNSL long crc;
+  unsigned long crc;
 
 DSERIAL_PRINTLN(F("\nzsendfile"));
 
