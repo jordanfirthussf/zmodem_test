@@ -15,8 +15,13 @@
 #define READCHECK
 #define TYPICAL_SERIAL_TIMEOUT 1200
 
-#define SD_SEL 5 // Thing Plus C
-// #define SD_SEL 21 // XIAO ESP32S3
+#if defined(ARDUINO_SEEED_XIAO_ESP32S3) || defined(ARDUINO_XIAO_ESP32S3)
+    #define SD_SEL 21 // XIAO ESP32S3
+#elif defined(ARDUINO_ADAFRUIT_FEATHER_RP2040_ADALOGGER) || defined(ARDUINO_ARCH_RP2040)
+    #define SD_SEL 23 // Feather RP2040 adalogger
+#else
+    #define SD_SEL 21 // Default
+#endif
 
 /*
  * can function with
