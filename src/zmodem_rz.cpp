@@ -136,7 +136,7 @@ void bttyout(int c);
 #ifndef ARDUINO
 FILE *fout;
 #else
-extern SdFile fout;
+extern FsFile fout;
 #endif
 
 // Dylan (monte_carlo_ecm, bitflipper, etc.) - Moved this to a global variable to enable
@@ -1155,3 +1155,15 @@ void ackbibi(void)
   }
 }
 
+
+void zmodem_receive_file() {
+  ASERIAL.println(F("Receiving file..."));
+  if (wcreceive(0, 0)) {
+    ASERIAL.println(F("zmodem transfer failed"));
+  } else {
+    ASERIAL.println(F("zmodem transfer successful"));
+  }
+  //fout.flush();
+  fout.sync();
+  fout.close();
+}

@@ -139,7 +139,7 @@ int zsendcmd(char *buf, int blen);
 #ifndef ARDUINO
 FILE *fout;
 #else
-extern SdFile fout;
+extern FsFile fout;
 #endif
 
 int wcs(const char *oname)

@@ -13,7 +13,7 @@
 //#include <SdFatUtil.h>
 
 SdFs sd;
-SdFile fout;
+FsFile fout;
 
 // SdFat asdfSD;
 // FsFile myFile;

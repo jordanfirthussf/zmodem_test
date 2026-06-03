@@ -216,7 +216,8 @@ void vfile();
 
 extern int Filesleft;
 extern long Totalleft;
-extern SdFile fout;
+extern FsFile fout;
+// extern SdFat sd;
 
 
 #ifdef NFGM
