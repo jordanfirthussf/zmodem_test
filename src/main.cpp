@@ -13,7 +13,14 @@
 //#include <SdFatUtil.h>
 
 SdFs sd;
+SdFile fout;
+
+// SdFat asdfSD;
+// FsFile myFile;
+// File32 myFile;
 #define SD_CS_PIN SD_SEL
+// SdSpiConfig config(SD_CS_PIN, DEDICATED_SPI, SD_SCK_MHZ(16), &SPI1);
+
 
 
 // #define TXBSIZE 1024 // tx buffer size (default 1024); must be a power of 2
@@ -38,7 +45,7 @@ constexpr size_t test_file_len = sizeof(test_file);
 void setup() {
 
   
-  ZSERIAL.begin(9600);
+  ZSERIAL.begin(115200);
   ZSERIAL.setTimeout(TYPICAL_SERIAL_TIMEOUT);
   delay(2000);
 
