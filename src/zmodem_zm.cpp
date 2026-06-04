@@ -100,7 +100,7 @@ void zsbhdr(int type, char *hdr)
     int n;
     unsigned long crc;
   
-    sendline(ZBIN32);
+    sendline(ZModem::ZBIN32);
     zsendline(type);
     crc = 0xFFFFFFFFL; 
     crc = UPDC32(type, crc);
@@ -118,7 +118,7 @@ void zsbhdr(int type, char *hdr)
     int n;
     unsigned short crc;
     
-    sendline(ZBIN); 
+    sendline(ZModem::ZBIN);
     zsendline(type); 
     crc = updcrc(type, 0);
 
@@ -164,7 +164,7 @@ void zshhdr(int type,char *hdr)
   /*
          * Uncork the remote in case a fake XOFF has stopped data flow
    */
-  if (type != ZFIN && type != ZACK)
+  if (type != ZModem::ZFIN && type != ZModem::ZACK)
     sendline(021);
   flushmo();
 }
@@ -200,7 +200,7 @@ void zsdata(char *buf,int length,int frameend)
         zsendline(c);
       crc = UPDC32(c, crc);
     }
-    sendline(ZDLE);
+    sendline(ZModem::ZDLE);
     sendline(frameend);
     crc = UPDC32(frameend, crc);
   
@@ -220,7 +220,7 @@ void zsdata(char *buf,int length,int frameend)
       crc = updcrc((0377 & *buf), crc);
     }
 
-    sendline(ZDLE);
+    sendline(ZModem::ZDLE);
     sendline(frameend);
     crc = updcrc(frameend, crc);
 
@@ -228,8 +228,8 @@ void zsdata(char *buf,int length,int frameend)
     zsendline(crc>>8); 
     zsendline(crc);
   }
-  if (frameend == ZCRCW) {
-    sendline(XON);
+  if (frameend == ZModem::ZCRCW) {
+    sendline(ZModem::XON);
     flushmo();
   }
 }
@@ -245,7 +245,7 @@ int zrdata(char *buf,int length)
   char *end;
   int d;
 
-  if (Rxframeind == ZBIN32) {
+  if (Rxframeind == ZModem::ZBIN32) {
     unsigned long crc;
   
     crc = 0xFFFFFFFFL;  
@@ -284,7 +284,7 @@ int zrdata(char *buf,int length)
           return d;
         case GOTCAN:
           zperr("Sender Canceled");
-          return ZCAN;
+          return ZModem::ZCAN;
         case TIMEOUT:
           zperr("TIMEOUT");
           return c;
@@ -328,7 +328,7 @@ int zrdata(char *buf,int length)
           return d;
         case GOTCAN:
           zperr("Sender Canceled");
-          return ZCAN;
+          return ZModem::ZCAN;
         case TIMEOUT:
           zperr("TIMEOUT");
           return c;
@@ -374,7 +374,7 @@ again:
   case RCDO:
   case TIMEOUT:
     goto fifi;
-  case CAN:
+  case ZModem::CAN:
 gotcan:
     if (--cancount <= 0) {
       c = ZCAN; 
@@ -383,16 +383,16 @@ gotcan:
     switch (c = readline(1)) {
     case TIMEOUT:
       goto again;
-    case ZCRCW:
+    case ZModem::ZCRCW:
       c = ERROR;
       /* **** FALL THRU TO **** */
     case RCDO:
       goto fifi;
     default:
       break;
-    case CAN:
+    case ZModem::CAN:
       if (--cancount <= 0) {
-        c = ZCAN; 
+        c = ZModem::ZCAN;
         goto fifi;
       }
       goto again;
@@ -420,7 +420,7 @@ agn2:
   cancount = 5;
 splat:
   switch (c = noxrd7()) {
-  case ZPAD:
+  case ZModem::ZPAD:
     goto splat;
   case RCDO:
   case TIMEOUT:
@@ -449,7 +449,7 @@ splat:
     Crc32rx = FALSE;
     c =  zrhhdr(hdr);
     break;
-  case CAN:
+  case ZModem::CAN:
     goto gotcan;
   default:
     goto agn2;
@@ -462,10 +462,10 @@ fifi:
 
   switch (c) {
   case GOTCAN:
-    c = ZCAN;
+    c = ZModem::ZCAN;
     /* **** FALL THRU TO **** */
-  case ZNAK:
-  case ZCAN:
+  case ZModem::ZNAK:
+  case ZModem::ZCAN:
   case ERROR:
   case TIMEOUT:
   case RCDO:
@@ -678,7 +678,7 @@ void zsendline(int c)
 
     default:
       if (Zctlesc && ! (c & 0140)) {
-        sendline(ZDLE);
+        sendline(ZModem::ZDLE);
         c ^= 0100;
       }
       sendline(lastsent = c);
@@ -751,14 +751,14 @@ again2:
   switch (c) {
   case CAN:
     return GOTCAN;
-  case ZCRCE:
-  case ZCRCG:
-  case ZCRCQ:
-  case ZCRCW:
+  case ZModem::ZCRCE:
+  case ZModem::ZCRCG:
+  case ZModem::ZCRCQ:
+  case ZModem::ZCRCW:
     return (c | GOTOR);
-  case ZRUB0:
+  case ZModem::ZRUB0:
     return 0177;
-  case ZRUB1:
+  case ZModem::ZRUB1:
     return 0377;
   case 023:
   case 0223:
@@ -790,8 +790,8 @@ int noxrd7(void)
     if ((c = readline(Rxtimeout)) < 0)
       return c;
     switch (c &= 0177) {
-    case XON:
-    case XOFF:
+    case ZModem::XON:
+    case ZModem::XOFF:
       continue;
     default:
       if (Zctlesc && !(c & 0140))
