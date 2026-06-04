@@ -128,14 +128,14 @@ void zsbhdr(int type, char *hdr)
     for (n = Znulls; --n >=0; )
       xsendline(0);
 */
-  xsendline(ZPAD); 
-  xsendline(ZDLE);
+  xsendline(ZModem::ZPAD);
+  xsendline(ZModem::ZDLE);
 //Pete (El Supremo) This looks wrong but it is correct - the code fails if == is used
   if ((Crc32t = Txfcs32)) {
     int n;
     UNSL long crc;
   
-    xsendline(ZBIN32);
+    xsendline(ZModem::ZBIN32);
     zsendline(type);
     crc = 0xFFFFFFFFL; 
     crc = UPDC32(type, crc);
@@ -153,7 +153,7 @@ void zsbhdr(int type, char *hdr)
     int n;
     unsigned short crc;
     
-    xsendline(ZBIN); 
+    xsendline(ZModem::ZBIN);
     zsendline(type); 
     crc = updcrc(type, 0);
 
@@ -165,7 +165,7 @@ void zsbhdr(int type, char *hdr)
     zsendline(crc>>8);
     zsendline(crc);
   }
-  if (type != ZDATA)
+  if (type != ZModem::ZDATA)
     flushmo();
 }
 
@@ -177,10 +177,10 @@ void zshhdr(int type,char *hdr)
   unsigned short crc;
 
   vfile(F("zshhdr: %s %lx"), frametypes[type+FTOFFSET], rclhdr(hdr));
-  sendline(ZPAD); 
-  sendline(ZPAD); 
-  sendline(ZDLE); 
-  sendline(ZHEX);
+  sendline(ZModem::ZPAD);
+  sendline(ZModem::ZPAD);
+  sendline(ZModem::ZDLE);
+  sendline(ZModem::ZHEX);
   zputhex(type);
   Crc32t = 0;
 
