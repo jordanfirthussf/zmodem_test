@@ -412,9 +412,9 @@ agn2:
     fflush(stderr);
 #endif
     goto startover;
-  case ZPAD|0200:         /* This is what we want. */
+  case ZModem::ZPAD|0200:         /* This is what we want. */
     Not8bit = c;
-  case ZPAD:              /* This is what we want. */
+  case ZModem::ZPAD:              /* This is what we want. */
     break;
   }
   cancount = 5;
@@ -427,7 +427,7 @@ splat:
     goto fifi;
   default:
     goto agn2;
-  case ZDLE:              /* This is what we want. */
+  case ZModem::ZDLE:              /* This is what we want. */
     break;
   }
 
@@ -435,17 +435,17 @@ splat:
   case RCDO:
   case TIMEOUT:
     goto fifi;
-  case ZBIN:
-    Rxframeind = ZBIN;  
+  case ZModem::ZBIN:
+    Rxframeind = ZModem::ZBIN;
     Crc32rx = FALSE;
     c =  zrbhdr(hdr);
     break;
-  case ZBIN32:
-    Crc32rx = Rxframeind = ZBIN32;
+  case ZModem::ZBIN32:
+    Crc32rx = Rxframeind = ZModem::ZBIN32;
     c =  zrbhdr32(hdr);
     break;
-  case ZHEX:
-    Rxframeind = ZHEX;  
+  case ZModem::ZHEX:
+    Rxframeind = ZModem::ZHEX;
     Crc32rx = FALSE;
     c =  zrhhdr(hdr);
     break;
@@ -652,8 +652,8 @@ void zsendline(int c)
 
   else {
     switch (c &= 0377) {
-    case ZDLE:
-      sendline(ZDLE);
+    case ZModem::ZDLE:
+      sendline(ZModem::ZDLE);
       sendline (lastsent = (c ^= 0100));
       break;
     case 015: // CR
@@ -670,7 +670,7 @@ void zsendline(int c)
     case 0220: // hex 8D
     case 0221: // '
     case 0223: // "
-      sendline(ZDLE);
+      sendline(ZModem::ZDLE);
       c ^= 0100;
 // sendit:
       sendline(lastsent = c);
@@ -726,7 +726,7 @@ again:
     return c;
 
   switch (c) {
-  case ZDLE:
+  case ZModem::ZDLE:
     break;
   case 023:
   case 0223:
@@ -742,14 +742,14 @@ again:
 again2:
   if ((c = readline(Rxtimeout)) < 0)
     return c;
-  if (c == CAN && (c = readline(Rxtimeout)) < 0)
+  if (c == ZModem::CAN && (c = readline(Rxtimeout)) < 0)
     return c;
-  if (c == CAN && (c = readline(Rxtimeout)) < 0)
+  if (c == ZModem::CAN && (c = readline(Rxtimeout)) < 0)
     return c;
-  if (c == CAN && (c = readline(Rxtimeout)) < 0)
+  if (c == ZModem::CAN && (c = readline(Rxtimeout)) < 0)
     return c;
   switch (c) {
-  case CAN:
+  case ZModem::CAN:
     return GOTCAN;
   case ZModem::ZCRCE:
   case ZModem::ZCRCG:
@@ -798,7 +798,7 @@ int noxrd7(void)
         continue;
     case '\r':
     case '\n':
-    case ZDLE:
+    case ZModem::ZDLE:
       return c;
     }
   }
