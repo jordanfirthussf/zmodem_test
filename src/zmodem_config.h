@@ -2,8 +2,26 @@
 
 #define Progname F("Arduino ZModem V3.0")
 
-#define SD_SEL 5 // Thing Plus C
-// #define SD_SEL 21 // XIAO ESP32S3
+// tx buffer, default to 1024, can override
+#ifndef TXBSIZE
+	#define TXBSIZE 1024 // must be power of 2
+#endif
+
+#define SERIAL_TX_BUFFER_SIZE 128
+
+// Dylan (monte_carlo_ecm, bitflipper, etc.) - changed serial read/write to macros to try to squeeze
+// out higher speed
+
+#define READCHECK
+#define TYPICAL_SERIAL_TIMEOUT 1200
+
+#if defined(ARDUINO_SEEED_XIAO_ESP32S3) || defined(ARDUINO_XIAO_ESP32S3)
+    #define SD_SEL 21 // XIAO ESP32S3
+#elif defined(ARDUINO_ADAFRUIT_FEATHER_RP2040_ADALOGGER) || defined(ARDUINO_ARCH_RP2040)
+    #define SD_SEL 23 // Feather RP2040 adalogger
+#else
+    #define SD_SEL 21 // Default
+#endif
 
 /*
  * can function with
@@ -56,19 +74,4 @@
 #include "Arduino.h"
 
 
-// Dylan (monte_carlo_ecm, bitflipper, etc.) - For smaller boards (32K flash, 2K RAM) it may only
-// be possible to have only one or some of the following 3 features enabled at a time:  1) File manager
-// commands (DEL, MD, RD, etc.), 2) SZ (Send ZModem) or 3) RZ (Receive ZModem).  Large boards
-// like the Arduino Mega can handle all 3 features in a single sketch easily, but for smaller boards like
-// Uno or Nano, it's very tight.  It seems to work okay, but if you don't need the file manager commands,
-// or one of send or receive, comment out the associated macro and it'll slim the sketch down some.
-
-// Uncomment the following macro to build a version with file manipulation commands.
-#define ARDUINO_SMALL_MEMORY_INCLUDE_FILE_MGR
-
-// Uncomment the following macro to build a version with SZ enabled.
-#define ARDUINO_SMALL_MEMORY_INCLUDE_SZ
-
-// Uncomment the following macro to build a version with RZ enabled
-// #define ARDUINO_SMALL_MEMORY_INCLUDE_RZ
 

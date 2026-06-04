@@ -1,3 +1,4 @@
+
 #ifndef zmodem_h
 #define zmodem_h
 
@@ -294,4 +295,4 @@ extern int Filesleft;
 extern long Totalleft;
 extern SdFile fout;
 
-#endif
+#endif  

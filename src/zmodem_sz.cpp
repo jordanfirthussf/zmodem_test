@@ -5,26 +5,18 @@
  *  Sz uses buffered I/O to greatly reduce CPU time compared to UMODEM.
  *
  *  USG UNIX (3.0) ioctl conventions courtesy Jeff Martin
- *
- *  2.1x hacks to avoid VMS fseek() bogosity, allow input from pipe
- *     -DBADSEEK -DTXBSIZE=32768  
- *  2.x has mods for VMS flavor
- *
- * 1.34 implements tx backchannel garbage count and ZCRCW after ZRPOS
- * in accordance with the 7-31-87 ZMODEM Protocol Description
  */
 
+
+void sendzrqinit(void);
+
 #include "zmodem_config.h"
-#include "zmodem_fixes.h"
+#include "zmodem_zm.h"
+#include "zmodem_sz.h"
 
-#ifdef ARDUINO_SMALL_MEMORY_INCLUDE_SZ
-
-// #define xsendline(c) sendline(c)
-// #define xsendline sendline
 
 #include "zmodem.h"
-#include "zmodem_zm.h"
-#include "zmodem_crc16.cpp"
+//#include "zmodem_crc16.cpp"
 
 #include <stdio.h>
 
@@ -38,8 +30,6 @@ unsigned Txwcnt;        /* Counter used to space ack requests */
 #define Lrxpos rxbytes
 extern long Lrxpos;            /* Receiver's last reported offset */
 
-int Filesleft = 0;
-long Totalleft = 0L;
 
 /*
  * Attention string to be executed by receiver to interrupt streaming data
@@ -149,7 +139,7 @@ int zsendcmd(char *buf, int blen);
 #ifndef ARDUINO
 FILE *fout;
 #else
-extern SdFile fout;
+extern FsFile fout;
 #endif
 
 int wcs(const char *oname)
@@ -428,11 +418,13 @@ int zfilbuf(void)
   return n;
 }
 
+
+
 /* Send file name and related info */
 int zsendfile(char *buf, int blen)
 {
   int c;
-  UNSL long crc;
+  unsigned long crc;
 
 DSERIAL_PRINTLN(F("\nzsendfile"));
 
@@ -771,6 +763,3 @@ void saybibi(void) {
   } // for
 } // saybibi
 
-#endif
-
-/* End of sz.c */
