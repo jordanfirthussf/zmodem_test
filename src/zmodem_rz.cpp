@@ -1,54 +1,7 @@
-/*% cc -compat -M2 -Ox -K -i -DMD -DOMEN % -o rz; size rz;
- <-xtx-*> cc386 -Ox -DMD -DOMEN -DSEGMENTS=8 rz.c -o $B/rz;  size $B/rz
- *
- * rz.c By Chuck Forsberg
- *
- *      cc -O rz.c -o rz                USG (3.0) Unix
- *      cc -O -DV7  rz.c -o rz          Unix V7, BSD 2.8 - 4.3
- *
- *      ln rz rb;  ln rz rx                     For either system
- *
- *      ln rz /usr/bin/rzrmail          For remote mail.  Make this the
- *                                      login shell. rzrmail then calls
- *                                      rmail(1) to deliver mail.
- *
- * To compile on VMS:
- *
- *      define LNK$LIBRARY   SYS$LIBRARY:VAXCRTL.OLB
- *      cc rz.c
- *      cc vvmodem.c
- *      link rz,vvmodem
- *      rz :== $disk:[username.subdir]rz.exe
- *
- *
- *  Unix is a trademark of Western Electric Company
- *
+/*
  * A program for Unix to receive files and commands from computers running
  *  Professional-YAM, PowerCom, YAM, IMP, or programs supporting XMODEM.
  *  rz uses Unix buffered input to reduce wasted CPU time.
- *
- * Iff the program is invoked by rzCOMMAND, output is piped to 
- * "COMMAND filename"  (Unix only)
- *
- *  Some systems (Venix, Coherent, Regulus) may not support tty raw mode
- *  read(2) the same way as Unix. ONEREAD must be defined to force one
- *  character reads for these systems. Added 7-01-84 CAF
- *
- *  Alarm signal handling changed to work with 4.2 BSD 7-15-84 CAF 
- *
- *  BIX added 6-30-87 to support BIX(TM) upload protocol used by the
- *  Byte Information Exchange.
- *
- *  NFGVMIN Updated 2-18-87 CAF for Xenix systems where c_cc[VMIN]
- *  doesn't work properly (even though it compiles without error!),
- *
- *  SEGMENTS=n added 2-21-88 as a model for CP/M programs
- *    for CP/M-80 systems that cannot overlap modem and disk I/O.
- *
- *  VMS flavor hacks begin with rz version 2.00
- *
- *  -DMD may be added to compiler command line to compile in
- *    Directory-creating routines from Public Domain TAR by John Gilmore
  *
  *  HOWMANY may be tuned for best performance
  *
@@ -59,6 +12,7 @@
 #include "zmodem_config.h"
 #include "zmodem_zm.h"
 #include "zmodem_rz.h"
+#include "zmodem.h"
 
 
 #include <stdio.h>
@@ -118,9 +72,6 @@ void bttyout(int c);
 #define PATHLEN 256     /* ready for 4.2 bsd ? */
 #endif
 #define UNIXFILE 0xF000 /* The S_IFMT file mask bit for stat */
-
-
-
 
 
 #ifndef ARDUINO
@@ -213,7 +164,7 @@ uint8_t Lleft=0;            /* number of characters in linbuf */
 
 
 
-uint8_t tryzhdrtype=ZRINIT; /* Header type to send corresponding to Last rx close */
+uint8_t tryzhdrtype=ZModem::ZRINIT; /* Header type to send corresponding to Last rx close */
 
 #ifdef ARDUINO_RECV
 
@@ -261,7 +212,7 @@ int wcreceive(int argc, char **argp)
     if ( !Quiet)
       fprintf(stderr, rbmsg, Progname, Nozmodem?"sb":"sz");
     if (c=tryz()) {
-      if (c == ZCOMPL) {
+      if (c == ZModem::ZCOMPL) {
         fout.close();
         return OK;
       }
@@ -366,12 +317,12 @@ int wcrxpn(char *rpn)
 et_tu:
   Firstsec=TRUE;  
   Eofseen=FALSE;
-  sendline(Crcflg?WANTCRC:NAK);
+  sendline(Crcflg?WANTCRC:ZModem::NAK);
   Lleft=0;        /* Do read next time ... */
   while ((c = wcgetsec(rpn, 100)) != 0) {
     if (c == WCEOT) {
       zperr( "Pathname fetch returned %d", c);
-      sendline(ACK);
+      sendline(ZModem::ACK);
       Lleft=0;        /* Do read next time ... */
       readline(1);
       goto et_tu;
@@ -380,7 +331,7 @@ et_tu:
 
   
   }
-  sendline(ACK);
+  sendline(ZModem::ACK);
   return OK;
 }
 
@@ -398,7 +349,7 @@ int wcrx()
   Firstsec=TRUE;
   sectnum=0; 
   Eofseen=FALSE;
-  sendchar=Crcflg?WANTCRC:NAK;
+  sendchar=Crcflg?WANTCRC:ZModem::NAK;
 
   for (;;) {
     sendline(sendchar);     /* send it now, we're ready! */
@@ -412,16 +363,16 @@ int wcrx()
         return ERROR;
       if ((Bytesleft-=cblklen) < 0)
         Bytesleft = 0;
-      sendchar=ACK;
+      sendchar=ZModem::ACK;
     }
     else if (sectcurr==(sectnum&0377)) {
       zperr( "Received dup Sector");
-      sendchar=ACK;
+      sendchar=ZModem::ACK;
     }
     else if (sectcurr==WCEOT) {
       if (closeit())
         return ERROR;
-      sendline(ACK);
+      sendline(ZModem::ACK);
       Lleft=0;        /* Do read next time ... */
       return OK;
     }
@@ -457,7 +408,7 @@ int wcgetsec(char *rxbuf,int maxtime)
       Blklen=1024; 
       goto get2;
     }
-    if (firstch==SOH) {
+    if (firstch==ZModem::SOH) {
       Blklen=128;
 get2:
       sectcurr=readline(1);
@@ -506,10 +457,10 @@ DSERIAL_PRINTLN(F("bilge 3"));
     else if (firstch==EOT && readline(1)==TIMEOUT)
       return WCEOT;
 #else
-    else if (firstch==EOT && Lleft==0)
+    else if (firstch==ZModem::EOT && Lleft==0)
       return WCEOT;
 #endif
-    else if (firstch==CAN) {
+    else if (firstch==ZModem::CAN) {
       if (Lastrx==CAN) {
         zperr( "Sender CANcelled");
         return ERROR;
@@ -533,12 +484,12 @@ humbug:
     while(readline(1)!=TIMEOUT)
       ;
     if (Firstsec) {
-      sendline(Crcflg?WANTCRC:NAK);
+      sendline(Crcflg?WANTCRC:ZModem::NAK);
       Lleft=0;        /* Do read next time ... */
     } 
     else {
       maxtime=40; 
-      sendline(NAK);
+      sendline(ZModem::NAK);
       Lleft=0;        /* Do read next time ... */
     }
   }
@@ -764,7 +715,7 @@ DSERIAL_PRINTLN(F("Entering tryz"));
   if (Nozmodem)           /* Check for "rb" program name */
     return 0;
 
-  tryzhdrtype=ZRINIT;
+  tryzhdrtype=ZModem::ZRINIT;
 
   for (n=Zmodem?15:5; --n>=0; ) {
     /* Set buffer length (0) and capability flags */
@@ -791,73 +742,73 @@ DSERIAL_PRINTLN(F("Entering tryz"));
     if (Zctlesc)
       Txhdr[ZF0] |= TESCCTL;
     zshhdr(tryzhdrtype, Txhdr);
-    if (tryzhdrtype == ZSKIP)       /* Don't skip too far */
-      tryzhdrtype = ZRINIT;   /* CAF 8-21-87 */
+    if (tryzhdrtype == ZModem::ZSKIP)       /* Don't skip too far */
+      tryzhdrtype = ZModem::ZRINIT;   /* CAF 8-21-87 */
 again:
     switch (zgethdr(Rxhdr, 0)) {
-    case ZRQINIT:
+    case ZModem::ZRQINIT:
 DSERIAL_PRINTLN(F("tryz got ZRQINIT"));
       continue;
-    case ZEOF:
+    case ZModem::ZEOF:
 DSERIAL_PRINTLN(F("tryz got ZEOF"));
       continue;
     case TIMEOUT:
 DSERIAL_PRINTLN(F("tryz got TIMEOUT"));
       continue;
-    case ZFILE:
+    case ZModem::ZFILE:
 DSERIAL_PRINTLN(F("tryz got ZFILE"));
 
       zconv = Rxhdr[ZF0];
       zmanag = Rxhdr[ZF1];
       ztrans = Rxhdr[ZF2];
-      tryzhdrtype = ZRINIT;
+      tryzhdrtype = ZModem::ZRINIT;
       c = zrdata(secbuf, SECBUF_LEN);
       // mode(3);
-      if (c == GOTCRCW)
-        return ZFILE;
-      zshhdr(ZNAK, Txhdr);
+      if (c == ZModem::GOTCRCW)
+        return ZModem::ZFILE;
+      zshhdr(ZModem::ZNAK, Txhdr);
       goto again;
-    case ZSINIT:
+    case ZModem::ZSINIT:
 DSERIAL_PRINTLN(F("tryz got ZSINIT"));
 
       Zctlesc = TESCCTL & Rxhdr[ZF0];
-      if (zrdata(Attn, ZATTNLEN) == GOTCRCW) {
+      if (zrdata(Attn, ZATTNLEN) == ZModem::GOTCRCW) {
         stohdr(1L);
-        zshhdr(ZACK, Txhdr);
+        zshhdr(ZModem::ZACK, Txhdr);
         goto again;
       }
-      zshhdr(ZNAK, Txhdr);
+      zshhdr(ZModem::ZNAK, Txhdr);
       goto again;
-    case ZFREECNT:
+    case ZModem::ZFREECNT:
       stohdr(getfree());
-      zshhdr(ZACK, Txhdr);
+      zshhdr(ZModem::ZACK, Txhdr);
       goto again;
-    case ZCOMMAND:
+    case ZModem::ZCOMMAND:
 #ifdef vax11c
       return ERROR;
 #else
 DSERIAL_PRINTLN(F("tryz got ZCOMMAND"));
 
       cmdzack1flg = Rxhdr[ZF0];
-      if (zrdata(secbuf, SECBUF_LEN) == GOTCRCW) {
+      if (zrdata(secbuf, SECBUF_LEN) == ZModem::GOTCRCW) {
 //        if (cmdzack1flg & ZCACK1)
           stohdr(0L);
 //        else
 //          stohdr((long)sys2(secbuf));
         purgeline();    /* dump impatient questions */
         do {
-          zshhdr(ZCOMPL, Txhdr);
+          zshhdr(ZModem::ZCOMPL, Txhdr);
         }
-        while (++errors<20 && zgethdr(Rxhdr,1) != ZFIN);
+        while (++errors<20 && zgethdr(Rxhdr,1) != ZModem::ZFIN);
         ackbibi();
 //        if (cmdzack1flg & ZCACK1)
 //          exec2(secbuf);
-        return ZCOMPL;
+        return ZModem::ZCOMPL;
       }
-      zshhdr(ZNAK, Txhdr); 
+      zshhdr(ZModem::ZNAK, Txhdr);
       goto again;
 #endif
-    case ZCOMPL:
+    case ZModem::ZCOMPL:
 DSERIAL_PRINTLN(F("tryz got ZCOMPL"));
 
       goto again;
@@ -865,12 +816,12 @@ DSERIAL_PRINTLN(F("tryz got ZCOMPL"));
 DSERIAL_PRINTLN(F("tryz got default"));
     
       continue;
-    case ZFIN:
+    case ZModem::ZFIN:
 DSERIAL_PRINTLN(F("tryz got ZFIN"));
 
       ackbibi(); 
-      return ZCOMPL;
-    case ZCAN:
+      return ZModem::ZCOMPL;
+    case ZModem::ZCAN:
 DSERIAL_PRINTLN(F("tryz got ZCAN"));
 
       return ERROR;
@@ -888,14 +839,14 @@ int rzfiles(void)
 
   for (;;) {
     switch (c = rzfile()) {
-    case ZEOF:
-    case ZSKIP:
+    case ZModem::ZEOF:
+    case ZModem::ZSKIP:
       switch (tryz()) {
-      case ZCOMPL:
+      case ZModem::ZCOMPL:
         return OK;
       default:
         return ERROR;
-      case ZFILE:
+      case ZModem::ZFILE:
         break;
       }
       continue;
@@ -918,7 +869,7 @@ int rzfile(void)
 
   Eofseen=FALSE;
   if (procheader(secbuf) == ERROR) {
-    return (tryzhdrtype = ZSKIP);
+    return (tryzhdrtype = ZModem::ZSKIP);
   }
 
   n = 20; 
@@ -929,13 +880,13 @@ int rzfile(void)
     chinseg = 0;
 #endif
     stohdr(rxbytes);
-    zshhdr(ZRPOS, Txhdr);
+    zshhdr(ZModem::ZRPOS, Txhdr);
 nxthdr:
     switch (c = zgethdr(Rxhdr, 0)) {
     default:
       vfile(F("rzfile: zgethdr returned %d"), c);
       return ERROR;
-    case ZNAK:
+    case ZModem::ZNAK:
     case TIMEOUT:
 #ifdef SEGMENTS
       putsec(secbuf, chinseg);
@@ -945,10 +896,10 @@ nxthdr:
         vfile(F("rzfile: zgethdr returned %d"), c);
         return ERROR;
       }
-    case ZFILE:
+    case ZModem::ZFILE:
       zrdata(secbuf, SECBUF_LEN);
       continue;
-    case ZEOF:
+    case ZModem::ZEOF:
 #ifdef SEGMENTS
       putsec(secbuf, chinseg);
       chinseg = 0;
@@ -963,7 +914,7 @@ nxthdr:
         goto nxthdr;
       }
       if (closeit()) {
-        tryzhdrtype = ZFERR;
+        tryzhdrtype = ZModem::ZFERR;
         vfile(F("rzfile: closeit returned <> 0"));
         return ERROR;
       }
@@ -980,7 +931,7 @@ nxthdr:
       }
       zmputs(Attn);
       continue;
-    case ZSKIP:
+    case ZModem::ZSKIP:
 #ifdef SEGMENTS
       putsec(secbuf, chinseg);
       chinseg = 0;
@@ -988,7 +939,7 @@ nxthdr:
       closeit();
       vfile(F("rzfile: Sender SKIPPED file"));
       return c;
-    case ZDATA:
+    case ZModem::ZDATA:
       if (rclhdr(Rxhdr) != rxbytes) {
         if ( --n < 0) {
           return ERROR;
@@ -1014,7 +965,7 @@ moredata:
         switch (c = zrdata(secbuf, SECBUF_LEN))
 #endif
         {
-        case ZCAN:
+        case ZModem::ZCAN:
 #ifdef SEGMENTS
           putsec(secbuf, chinseg);
           chinseg = 0;
@@ -1042,7 +993,7 @@ moredata:
             return ERROR;
           }
           continue;
-        case GOTCRCW:
+        case ZModem::GOTCRCW:
           n = 20;
 #ifdef SEGMENTS
           chinseg += Rxcount;
@@ -1053,10 +1004,10 @@ moredata:
 #endif
           rxbytes += Rxcount;
           stohdr(rxbytes);
-          zshhdr(ZACK, Txhdr);
-          sendline(XON);
+          zshhdr(ZModem::ZACK, Txhdr);
+          sendline(ZModem::XON);
           goto nxthdr;
-        case GOTCRCQ:
+        case ZModem::GOTCRCQ:
           n = 20;
 #ifdef SEGMENTS
           chinseg += Rxcount;
@@ -1065,9 +1016,9 @@ moredata:
 #endif
           rxbytes += Rxcount;
           stohdr(rxbytes);
-          zshhdr(ZACK, Txhdr);
+          zshhdr(ZModem::ZACK, Txhdr);
           goto moredata;
-        case GOTCRCG:
+        case ZModem::GOTCRCG:
           n = 20;
 #ifdef SEGMENTS
           chinseg += Rxcount;
@@ -1076,7 +1027,7 @@ moredata:
 #endif
           rxbytes += Rxcount;
           goto moredata;
-        case GOTCRCE:
+        case ZModem::GOTCRCE:
           n = 20;
 #ifdef SEGMENTS
           chinseg += Rxcount;
@@ -1140,7 +1091,7 @@ void ackbibi(void)
   stohdr(0L);
   for (n=3; --n>=0; ) {
     purgeline();
-    zshhdr(ZFIN, Txhdr);
+    zshhdr(ZModem::ZFIN, Txhdr);
     switch (readline(100)) {
     case 'O':
       readline(1);    /* Discard 2nd 'O' */

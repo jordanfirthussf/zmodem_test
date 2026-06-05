@@ -23,9 +23,12 @@
  *      long rclhdr(hdr) recover position offset from header
  */
 
+#include "zmodem.h"
+
 #ifdef ARDUINO
 #include "zmodem_config.h"
 #include "zmodem_zm.h"
+#include "zmodem.h"
 #else
 #ifndef CANFDX
 #include "zmodem.h"
@@ -255,10 +258,10 @@ int zrdata(char *buf,int length)
       if ((c = zdlread()) & ~0377) {
   crcfoo32:
         switch (c) {
-        case GOTCRCE:
-        case GOTCRCG:
-        case GOTCRCQ:
-        case GOTCRCW:
+        case ZModem::GOTCRCE:
+        case ZModem::GOTCRCG:
+        case ZModem::GOTCRCQ:
+        case ZModem::GOTCRCW:
           d = c;  
           c &= 0377;
           crc = UPDC32(c, crc);
@@ -282,7 +285,7 @@ int zrdata(char *buf,int length)
           vfile(F("zrdat32: %d %s"), Rxcount,
           Zendnames[(d-GOTCRCE)&3]);
           return d;
-        case GOTCAN:
+        case ZModem::GOTCAN:
           zperr("Sender Canceled");
           return ZModem::ZCAN;
         case TIMEOUT:
@@ -307,10 +310,10 @@ int zrdata(char *buf,int length)
       if ((c = zdlread()) & ~0377) {
   crcfoo16:
         switch (c) {
-        case GOTCRCE:
-        case GOTCRCG:
-        case GOTCRCQ:
-        case GOTCRCW:
+        case ZModem::GOTCRCE:
+        case ZModem::GOTCRCG:
+        case ZModem::GOTCRCQ:
+        case ZModem::GOTCRCW:
           crc = updcrc((d=c)&0377, crc);
           if ((c = zdlread()) & ~0377)
             goto crcfoo16;
@@ -326,7 +329,7 @@ int zrdata(char *buf,int length)
           vfile(F("zrdata: %d  %s"), Rxcount,
           Zendnames[(d-GOTCRCE)&3]);
           return d;
-        case GOTCAN:
+        case ZModem::GOTCAN:
           zperr("Sender Canceled");
           return ZModem::ZCAN;
         case TIMEOUT:
@@ -377,7 +380,7 @@ again:
   case ZModem::CAN:
 gotcan:
     if (--cancount <= 0) {
-      c = ZCAN; 
+      c = ZModem::ZCAN;
       goto fifi;
     }
     switch (c = readline(1)) {
@@ -461,7 +464,7 @@ splat:
 fifi:
 
   switch (c) {
-  case GOTCAN:
+  case ZModem::GOTCAN:
     c = ZModem::ZCAN;
     /* **** FALL THRU TO **** */
   case ZModem::ZNAK:
@@ -750,12 +753,12 @@ again2:
     return c;
   switch (c) {
   case ZModem::CAN:
-    return GOTCAN;
+    return ZModem::GOTCAN;
   case ZModem::ZCRCE:
   case ZModem::ZCRCG:
   case ZModem::ZCRCQ:
   case ZModem::ZCRCW:
-    return (c | GOTOR);
+    return (c | ZModem::GOTOR);
   case ZModem::ZRUB0:
     return 0177;
   case ZModem::ZRUB1:
