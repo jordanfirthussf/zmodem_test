@@ -3,17 +3,19 @@
 
 // #define SERIAL_TX_BUFFER_SIZE 128
 
+#include <SdFat.h>
+
+SdFs sd;
+FsFile fout;
+
 #include <SPI.h>
 
 #include "zmodem_config.h"
 #include "zmodem_zm.h"
 #include "zmodem_sz.h"
 #include "zmodem_rz.h"
-#include <SdFat.h>
 //#include <SdFatUtil.h>
 
-SdFs sd;
-FsFile fout;
 
 // SdFat asdfSD;
 // FsFile myFile;

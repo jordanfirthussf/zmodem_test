@@ -25,6 +25,8 @@
 
 #include "zmodem.h"
 
+ZModem::ZModem() {}
+
 #ifdef ARDUINO
 #include "zmodem_config.h"
 #include "zmodem_zm.h"
@@ -119,22 +121,23 @@ void zsbhdr(int type, char *hdr)
     }
   } else {
     int n;
-    unsigned short crc;
+    unsigned short crc=0;
     
     sendline(ZModem::ZBIN);
     zsendline(type); 
-    crc = updcrc(type, 0);
+    crc = updcrc(type, crc);
 
     for (n=4; --n >= 0; ++hdr) {
       zsendline(*hdr);
       crc = updcrc((0377& *hdr), crc);
     }
-    crc = updcrc(0,updcrc(0,crc));
+    crc = updcrc(0,crc);
+    crc = updcrc(0,crc);
     zsendline(crc>>8);
     zsendline(crc);
   }
   if (type != ZModem::ZDATA)
-    flushmo();
+    ZModem::flushmo();
 }
 
 
@@ -142,7 +145,7 @@ void zsbhdr(int type, char *hdr)
 void zshhdr(int type,char *hdr)
 {
   int n;
-  unsigned short crc;
+  unsigned short crc=0;
 
   vfile(F("zshhdr: %s %lx"), frametypes[type+FTOFFSET], rclhdr(hdr));
   sendline(ZModem::ZPAD);
@@ -152,12 +155,13 @@ void zshhdr(int type,char *hdr)
   zputhex(type);
   Crc32tx = 0;
 
-  crc = updcrc(type, 0);
+  crc = updcrc(type, crc);
   for (n=4; --n >= 0; ++hdr) {
     zputhex(*hdr); 
     crc = updcrc((0377 & *hdr), crc);
   }
-  crc = updcrc(0,updcrc(0,crc));
+  crc = updcrc(0,crc);
+  crc = updcrc(0,crc);
   zputhex(crc>>8); 
   zputhex(crc);
 
@@ -169,9 +173,17 @@ void zshhdr(int type,char *hdr)
    */
   if (type != ZModem::ZFIN && type != ZModem::ZACK)
     sendline(021);
-  flushmo();
+  ZModem::flushmo();
 }
 
+/// @brief update CRC (cyclic redundancy check), the error correction used by ZModem
+/// @param cp character pointer (new byte)
+/// @param crc running crc
+/// @return crc (updated with new byte)
+unsigned short updcrc(uint8_t cp, uint16_t& crc) {
+  crc = (crctab[((crc >> 8) & 255)] ^ (crc << 8)) ^ cp;
+  return crc;
+}
 
 /*
  * Send binary array buf of length length, with ending ZDLE sequence frameend
@@ -214,9 +226,7 @@ void zsdata(char *buf,int length,int frameend)
     }
   } else {
     // Serial.print("not crc32 "); delay(5); // good
-    unsigned short crc;
-    
-    crc = 0;
+    unsigned short crc = 0;
     for (;--length >= 0; ++buf) {
       zsendline(*buf);
 
@@ -227,13 +237,15 @@ void zsdata(char *buf,int length,int frameend)
     sendline(frameend);
     crc = updcrc(frameend, crc);
 
-    crc = updcrc(0,updcrc(0,crc));
+    crc = updcrc(0, crc);
+    crc = updcrc(0, crc);
+
     zsendline(crc>>8); 
     zsendline(crc);
   }
   if (frameend == ZModem::ZCRCW) {
     sendline(ZModem::XON);
-    flushmo();
+    ZModem::flushmo();
   }
 }
 
@@ -490,12 +502,12 @@ break;
 int zrbhdr(char *hdr)
 {
   int c, n;
-  unsigned short crc;
+  unsigned short crc=0;
 
   if ((c = zdlread()) & ~0377)
     return c;
   Rxtype = c;
-  crc = updcrc(c, 0);
+  crc = updcrc(c, crc);
 
   for (n=4; --n >= 0; ++hdr) {
     if ((c = zdlread()) & ~0377)
@@ -572,13 +584,13 @@ int zrbhdr32(char *hdr)
 int zrhhdr(char *hdr)
 {
   int c;
-  unsigned short crc;
+  unsigned short crc=0;
   int n;
 
   if ((c = zgethex()) < 0)
     return c;
   Rxtype = c;
-  crc = updcrc(c, 0);
+  crc = updcrc(c, crc);
 
   for (n=4; --n >= 0; ++hdr) {
     if ((c = zgethex()) < 0)
@@ -852,11 +864,11 @@ void bttyout(int c)
     putc(c, stderr);
 #endif
 }
-
-void flushmo(void)
-{
-  ZSERIAL.flush();
-}
+//
+// void flushmo(void)
+// {
+//   ZSERIAL.flush();
+// }
 
 
 /* send cancel string to get the other end to shut up */

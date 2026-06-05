@@ -40,6 +40,7 @@ extern uint32_t Baudrate;
 // }
 //int readline(int timeout);
 
+
 #define OK 0
 #define FALSE 0
 #define TRUE 1
@@ -92,3 +93,4 @@ void sendline(char c);
 int readline(int timeout);
 int zdlread(void);
 
+unsigned short updcrc(uint8_t cp, uint16_t& crc);

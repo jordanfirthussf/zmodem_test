@@ -3,6 +3,7 @@
 #define zmodem_h
 
 #include "Arduino.h"
+#include "SdFat.h"
 
 // zmodem constants
 
@@ -200,6 +201,20 @@ class ZModem {
 private:
     Stream *_serial;
 
+    // function definitions
+    static void flushmo();
+    static void saybibi();
+    static void sendzrqinit();
+    static int wcs(const char *oname);
+    static int wctxpn(const char *name);
+    static int wctx(long flen);
+    static int wcputsec(char *buf, int sectnum, int cseclen);
+    static int filbuf(char *buf, int count);
+    static int zfilbuf();
+    static int zsendfile(char *buf, int blen);
+    static int zsendfdata();
+    static int getinsync(int flag);
+
 }; // end class ZModem
 
 
@@ -271,10 +286,8 @@ void vfile();
 #endif
 
 void bibi(int n);
-int wcs(const char *oname);
-void saybibi(void);
 
-int wctxpn(char *name,SdFile *file);
+int wctxpn(char *name, FsFile *file);
 int wcrx();
 
 
@@ -299,7 +312,7 @@ void zmodem_send_file(char* param);
 
 extern int Filesleft;
 extern long Totalleft;
-extern SdFile fout;
+extern FsFile fout;
 
 
 #ifdef NFGM
@@ -376,10 +389,14 @@ long c;
 // Dylan (monte_carlo_ecm, bitflipper, etc.) - No warning in Arduino IDE 1.6.5
 
 // #ifdef ARDUINO
-#define updcrc(cp, crc) ({ ( (pgm_read_word(crctab + ((crc >> 8) & 255)) ^ (crc << 8) ) ^ cp); })
+// #define updcrc(cp, crc) ({ ( (pgm_read_word(crctab + ((crc >> 8) & 255)) ^ (crc << 8) ) ^ cp); })
 // #else
 // #define updcrc(cp, crc) { ( (crctab[((crc >> 8) & 255)] ^ (crc << 8) ) ^ cp); Serial.print("updcrc"); delay(5); };
 // #endif
+
+
+
+// pgm_read_word(crctab + crc)
 
 /*
  * Copyright (C) 1986 Gary S. Brown.  You may use this program, or

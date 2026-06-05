@@ -83,12 +83,12 @@ void bttyout(int c);
 
 #include "crctab.c"
 #endif
-
-#ifndef ARDUINO
-FILE *fout;
-#else
-extern FsFile fout;
-#endif
+//
+// #ifndef ARDUINO
+// FILE *fout;
+// #else
+// extern FsFile fout;
+// #endif
 
 // Dylan (monte_carlo_ecm, bitflipper, etc.) - Moved this to a global variable to enable
 // crash recovery (continuation of partial file transfer)
@@ -210,7 +210,7 @@ int wcreceive(int argc, char **argp)
   if (Batch || argc==0) {
     Crcflg=1;
     if ( !Quiet)
-      fprintf(stderr, rbmsg, Progname, Nozmodem?"sb":"sz");
+      fprintf(stderr, reinterpret_cast<const char*>(rbmsg), Progname, Nozmodem?"sb":"sz");
     if (c=tryz()) {
       if (c == ZModem::ZCOMPL) {
         fout.close();
@@ -385,6 +385,8 @@ int wcrx()
   }
 }
 
+
+
 /*
  * Wcgetsec fetches a Ward Christensen type sector.
  * Returns sector number encountered or ERROR if valid sector not received,
@@ -461,12 +463,12 @@ DSERIAL_PRINTLN(F("bilge 3"));
       return WCEOT;
 #endif
     else if (firstch==ZModem::CAN) {
-      if (Lastrx==CAN) {
+      if (Lastrx== ZModem::CAN) {
         zperr( "Sender CANcelled");
         return ERROR;
       } 
       else {
-        Lastrx=CAN;
+        Lastrx= ZModem::CAN;
         continue;
       }
     }
@@ -736,11 +738,11 @@ DSERIAL_PRINTLN(F("Entering tryz"));
 #ifdef CANBREAK
     Txhdr[ZF0] = CANFC32|CANFDX|CANOVIO|CANBRK;
 #else
-    Txhdr[ZF0] = CANFC32|CANFDX|CANOVIO;
+    Txhdr[ZF0] = ZModem::ZF0_CANFC32|ZModem::ZF0_CANFDX|ZModem::ZF0_CANOVIO;
 #endif
 
     if (Zctlesc)
-      Txhdr[ZF0] |= TESCCTL;
+      Txhdr[ZF0] |= ZModem::ZF0_TESCCTL;
     zshhdr(tryzhdrtype, Txhdr);
     if (tryzhdrtype == ZModem::ZSKIP)       /* Don't skip too far */
       tryzhdrtype = ZModem::ZRINIT;   /* CAF 8-21-87 */
