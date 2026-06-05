@@ -215,6 +215,40 @@ private:
     static int zsendfdata();
     static int getinsync(int flag);
 
+    // receive-side helpers
+    static int wcreceive(int argc, char **argp);
+    static int wcrxpn(char *rpn);
+    static int wcrx();
+    static int wcgetsec(char *rxbuf, int maxtime);
+    static int procheader(const char *name);
+    static void bibi(int n);
+    static void canit();
+    static void purgeline();
+    static void ackbibi();
+    static int rzfiles();
+    static int rzfile();
+
+    // protocol primitives
+    static void zsbhdr(int type, char *hdr);
+    static void zshhdr(int type, char *hdr);
+    static void zsdata(char *buf, int length, int frameend);
+    static int zrdata(char *buf, int length);
+    static int zgethdr(char *hdr, int eflag);
+    static int zrbhdr(char *hdr);
+    static int zrbhdr32(char *hdr);
+    static int zrhhdr(char *hdr);
+    static void zputhex(int c);
+    static void zsendline(int c);
+    static void zsendline(char c);
+    static void sendline(int c);
+    static void sendline(char c);
+    static unsigned short updcrc(uint8_t cp, uint16_t& crc);
+    static void bttyout(int c);
+    static void stohdr(long pos);
+    static long rclhdr(char *hdr);
+
+
+
 }; // end class ZModem
 
 
@@ -261,22 +295,7 @@ void sendbrk(void);
 #endif
 /* zm.c */
 
-void zsbhdr(int type, char *hdr);
-void zshhdr(int type, char *hdr);
-void zsdata(char *buf, int length, int frameend);
-int zrdata(char *buf, int length);
-int zgethdr(char *hdr, int eflag);
-int zrbhdr(char *hdr);
-int zrbhdr32(char *hdr);
-int zrhhdr(char *hdr);
-void zputhex(int c);
-void zsendline2(int c);
-int zgethex(void);
-int zgeth1(void);
-//int zdlread(void);
 int noxrd7(void);
-void stohdr(long pos);
-long rclhdr(char *hdr);
 
 /* rz.c sz.c */
 #ifndef ARDUINO
@@ -285,10 +304,12 @@ void vfile();
 #define vfile(a, ... )
 #endif
 
-void bibi(int n);
+// moved to ZModem class:
+// void bibi(int n);
 
-int wctxpn(char *name, FsFile *file);
-int wcrx();
+// moved to ZModem class:
+// int wctxpn(char *name, FsFile *file);
+// int wcrx();
 
 
 // #define CPMEOF 032

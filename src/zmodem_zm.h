@@ -7,7 +7,8 @@
 #include "zmodem_config.h"
 #include "zmodem.h"
 
-void sendline(char c);
+// moved to ZModem class:
+// void sendline(char c);
 
 extern char oneKbuf[1025];
 
@@ -60,7 +61,8 @@ extern uint32_t Baudrate;
 #define zperr(...)
 #endif
 
-void bttyout(int c);
+// moved to ZModem class:
+// void bttyout(int c);
 
 #define Zmodem 1           /* ZMODEM protocol requested */
 extern uint8_t Verbose;
@@ -87,10 +89,12 @@ extern uint8_t errors;
 void zsendline(int c);
 void zsendline(char c);
 
-void sendline(int c);
-void sendline(char c);
+// moved to ZModem class:
+// void sendline(int c);
+// void sendline(char c);
 
 int readline(int timeout);
 int zdlread(void);
 
-unsigned short updcrc(uint8_t cp, uint16_t& crc);
+// moved to ZModem class:
+// unsigned short updcrc(uint8_t cp, uint16_t& crc);

@@ -24,16 +24,7 @@
 //#include "zmodem_crc16.cpp"
 
 long getfree(void);
-int wcreceive(int argc, char **argp);
-int wcrxpn(char *rpn);
-int wcrx();
-int wcgetsec(char *rxbuf, int maxtime);
-//int readline(int timeout);
-void purgeline(void);
-int procheader(const char *name);
 int putsec(char *buf, int n);
-//void sendline(int c);
-void flushmo(void);
 void uncaps(char *s);
 int IsAnyLower(char *s);
 
@@ -170,11 +161,11 @@ uint8_t tryzhdrtype=ZModem::ZRINIT; /* Header type to send corresponding to Last
 
 #ifndef ARDUINO
 /* called by signal interrupt or terminate to clean things up */
-void bibi(int n)
+void ZModem::bibi(int n)
 {
   if (Zmodem)
     zmputs(Attn);
-  canit(); 
+  ZModem::canit(); 
   // mode(0);
   fprintf(stderr, "rz: caught signal %d; exiting\n", n);
   cucheck();
@@ -201,7 +192,7 @@ void bibi(int n)
 
 #define rbmsg F("%s ready. To begin transfer, type \"%s file ...\" to your modem program\r\n\n")
 
-int wcreceive(int argc, char **argp)
+int ZModem::wcreceive(int argc, char **argp)
 //int argc;
 //char **argp;
 {
@@ -303,7 +294,7 @@ int Firstsec;
  * Length is indeterminate as long as less than Blklen
  * A null string represents no more files (YMODEM)
  */
-int wcrxpn(char *rpn)
+int ZModem::wcrxpn(char *rpn)
 /* receive a pathname */
 {
   int c;
@@ -340,7 +331,7 @@ et_tu:
  * Jack M. Wierda and Roderick W. Hart
  */
 
-int wcrx()
+int ZModem::wcrx()
 {
   int sectnum, sectcurr;
   char sendchar;
@@ -397,7 +388,7 @@ int wcrx()
  *    (Caller must do that when he is good and ready to get next sector)
  */
 
-int wcgetsec(char *rxbuf,int maxtime)
+int ZModem::wcgetsec(char *rxbuf,int maxtime)
 {
   int checksum, wcj, firstch;
   unsigned short oldcrc;
@@ -507,7 +498,7 @@ humbug:
 /*
  * Process incoming file information header
  */
-int procheader(const char *name)
+int ZModem::procheader(const char *name)
 {
   char *openmode;
   const char *p;
@@ -835,7 +826,7 @@ DSERIAL_PRINTLN(F("tryz got ZCAN"));
 /*
  * Receive 1 or more files with ZMODEM protocol
  */
-int rzfiles(void)
+int ZModem::rzfiles(void)
 {
   int c;
 
@@ -864,7 +855,7 @@ int rzfiles(void)
  * Receive a file with ZMODEM protocol
  *  Assumes file name frame is in secbuf
  */
-int rzfile(void)
+int ZModem::rzfile()
 {
   int c, n;
 //  long rxbytes;
@@ -1084,7 +1075,7 @@ int closeit(void)
 /*
  * Ack a ZFIN packet, let byegones be byegones
  */
-void ackbibi(void)
+void ZModem::ackbibi(void)
 {
   int n;
 
