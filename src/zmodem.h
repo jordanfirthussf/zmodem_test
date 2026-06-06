@@ -31,6 +31,8 @@
 #define ZP2     2
 #define ZP3     3       /* High order 8 bits of file position */
 
+#define ZATTNLEN  0x20	/* Max length of attention string */
+
 
 /* Bit Masks for ZSINIT flags byte ZF0 */
 #define TESCCTL 0100    /* Transmitter expects ctl chars to be escaped */
@@ -105,7 +107,7 @@ class ZModem {
 
 
         /* zdlread return values (internal) */
-/* -1 is general error, -2 is timeout */
+        /* -1 is general error, -2 is timeout */
 
     enum ZDLE_ReadCodes {
         GOTOR = 0x100,
@@ -151,7 +153,7 @@ class ZModem {
         ZF0_TESCCTL =	0x40,	/* Transmitter expects ctl chars to be escaped */
         ZF0_TESC8   =	0x80,	/* Transmitter expects 8th bit to be escaped */
 
-        // ZATTNLEN	=   0x20,	/* Max length of attention string */
+
         ALTCOFF		=	ZF1		/* Offset to alternate canit string, 0 if not used */
 
     }; // end ZSInitFrame
@@ -198,22 +200,22 @@ class ZModem {
 
     void begin(Stream &serial);
 
-private:
+protected:
     Stream *_serial;
 
     // function definitions
+    static int zdlread();
     static void flushmo();
-    static void saybibi();
-    static void sendzrqinit();
-    static int wcs(const char *oname);
-    static int wctxpn(const char *name);
-    static int wctx(long flen);
+    static int readline(int timeout);
+    static int zgethex();
+
+    static int noxrd7();
+
+    // static int wcs(const char *oname);
+   // static int wctxpn(const char *name);
     static int wcputsec(char *buf, int sectnum, int cseclen);
-    static int filbuf(char *buf, int count);
-    static int zfilbuf();
-    static int zsendfile(char *buf, int blen);
+
     static int zsendfdata();
-    static int getinsync(int flag);
 
     // receive-side helpers
     static int wcreceive(int argc, char **argp);
@@ -227,6 +229,8 @@ private:
     static void ackbibi();
     static int rzfiles();
     static int rzfile();
+
+
 
     // protocol primitives
     static void zsbhdr(int type, char *hdr);
@@ -320,7 +324,7 @@ void vfile();
 // #define Tx_RETRYMAX 10
 // #define Rx_RETRYMAX 5
 
-void zmodem_send_file(char* param);
+
 
 
 // Dylan (monte_carlo_ecm, bitflipper, etc.) - The way I made this sketch in any way operate on

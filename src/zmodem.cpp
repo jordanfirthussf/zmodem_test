@@ -6,7 +6,3 @@
 
 #include "zmodem_config.h"
 
-void flushmo()
-{
-    ZSERIAL.flush();
-}

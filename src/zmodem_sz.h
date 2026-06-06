@@ -3,9 +3,26 @@
 #include <SdFat.h>
 #include "zmodem.h"
 
-ZModem::ZModem() {}
+class ZModemSend: public ZModem {
+    public:
+    ZModemSend();
 
-void zmodem_send_file(char* param);
+    void send_file(char* param);
+    static int wctxpn(const char *name);
+    static int wcs(const char *oname);
+    static int zsendfile(char *buf, int blen);
+    static void sendzrqinit();
+    static int wctx(long flen);
+    static void saybibi();
+    static int getinsync(int flag);
+    static int filbuf(char *buf, int count);
+    static int zfilbuf();
+    static int zsendfdata();
+
+    static void zmodem_send_file(char* param);
+};
+
+// void zmodem_send_file(char* param);
 
 // moved to ZModem class
 // int wcs(const char* oname);

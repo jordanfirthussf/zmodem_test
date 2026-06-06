@@ -13,7 +13,7 @@ FsFile fout;
 #include "zmodem_config.h"
 #include "zmodem_zm.h"
 #include "zmodem_sz.h"
-#include "zmodem_rz.h"
+// #include "zmodem_rz.h"
 //#include <SdFatUtil.h>
 
 
@@ -80,7 +80,7 @@ ASERIAL.println(F("SdCard setup complete"));
 
   char cmd[14] = "flightA.csv";
 
-  zmodem_send_file(cmd);
+  ZModemSend::zmodem_send_file(cmd);
 }
 
 void loop() {

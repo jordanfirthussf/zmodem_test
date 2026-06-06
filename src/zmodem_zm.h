@@ -2,7 +2,7 @@
 
 #define VERSION Progname
 
-#define ZATTNLEN 4
+// #define ZATTNLEN 4
 
 #include "zmodem_config.h"
 #include "zmodem.h"
@@ -86,15 +86,11 @@ extern uint8_t errors;
 // This is declared in the main sketch .ino
 //extern char *Progname;
 
-void zsendline(int c);
-void zsendline(char c);
+// Legacy C-style ZMODEM primitives are now available as static methods on ZModem.
 
 // moved to ZModem class:
 // void sendline(int c);
 // void sendline(char c);
-
-int readline(int timeout);
-int zdlread(void);
 
 // moved to ZModem class:
 // unsigned short updcrc(uint8_t cp, uint16_t& crc);

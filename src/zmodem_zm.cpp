@@ -25,8 +25,6 @@
 
 #include "zmodem.h"
 
-ZModem::ZModem() {}
-
 #ifdef ARDUINO
 #include "zmodem_config.h"
 #include "zmodem_zm.h"
@@ -36,6 +34,28 @@ ZModem::ZModem() {}
 #include "zmodem.h"
 #endif
 #endif
+//
+// using ZModem::zsbhdr;
+// using ZModem::zshhdr;
+// using ZModem::zsdata;
+// using ZModem::zrdata;
+// using ZModem::zgethdr;
+// using ZModem::zrbhdr;
+// using ZModem::zrbhdr32;
+// using ZModem::zrhhdr;
+// using ZModem::zputhex;
+// using ZModem::zsendline;
+// using ZModem::sendline;
+// using ZModem::zgethex;
+// using ZModem::zdlread;
+// using ZModem::noxrd7;
+// using ZModem::stohdr;
+// using ZModem::rclhdr;
+// using ZModem::purgeline;
+// using ZModem::bttyout;
+// using ZModem::canit;
+// using ZModem::readline;
+// using ZModem::updcrc;
 
 // Shared globals
 long Bytesleft; // from rz - Shared with sz bytcnt
@@ -89,7 +109,7 @@ uint8_t errors;
 
 
 /* Send ZMODEM binary header hdr of type type */
-void zsbhdr(int type, char *hdr)
+void ZModem::zsbhdr(int type, char *hdr)
 {
 
 
@@ -142,7 +162,7 @@ void zsbhdr(int type, char *hdr)
 
 
 /* Send ZMODEM HEX header hdr of type type */
-void zshhdr(int type,char *hdr)
+void ZModem::zshhdr(int type,char *hdr)
 {
   int n;
   unsigned short crc=0;
@@ -180,7 +200,7 @@ void zshhdr(int type,char *hdr)
 /// @param cp character pointer (new byte)
 /// @param crc running crc
 /// @return crc (updated with new byte)
-unsigned short updcrc(uint8_t cp, uint16_t& crc) {
+unsigned short ZModem::updcrc(uint8_t cp, uint16_t& crc) {
   crc = (crctab[((crc >> 8) & 255)] ^ (crc << 8)) ^ cp;
   return crc;
 }
@@ -197,7 +217,7 @@ static char *Zendnames[] = {
 };
 */
 
-void zsdata(char *buf,int length,int frameend)
+void ZModem::zsdata(char *buf,int length,int frameend)
 {
 
   // vfile(F("zsdata: %d %s"), length, Zendnames[(frameend-ZCRCE)&3]);
@@ -254,7 +274,7 @@ void zsdata(char *buf,int length,int frameend)
  *  and CRC.  Returns the ending character or error code.
  *  NB: On errors may store length+1 bytes!
  */
-int zrdata(char *buf,int length)
+int ZModem::zrdata(char *buf,int length)
 {
   int c;
   char *end;
@@ -370,7 +390,7 @@ int zrdata(char *buf,int length)
  *   Otherwise return negative on error.
  *   Return ERROR instantly if ZCRCW sequence, for fast error recovery.
  */
-int zgethdr(char *hdr,int eflag)
+int ZModem::zgethdr(char *hdr,int eflag)
 {
   int c, n, cancount;
 
@@ -499,7 +519,7 @@ break;
 //#endif
 
 /* Receive a binary style header (type and position) */
-int zrbhdr(char *hdr)
+int ZModem::zrbhdr(char *hdr)
 {
   int c, n;
   unsigned short crc=0;
@@ -535,7 +555,7 @@ int zrbhdr(char *hdr)
 
 
 /* Receive a binary style header (type and position) with 32 bit FCS */
-int zrbhdr32(char *hdr)
+int ZModem::zrbhdr32(char *hdr)
 {
   int c, n;
   unsigned long crc;
@@ -581,7 +601,7 @@ int zrbhdr32(char *hdr)
 
 
 /* Receive a hex style header (type and position) */
-int zrhhdr(char *hdr)
+int ZModem::zrhhdr(char *hdr)
 {
   int c;
   unsigned short crc=0;
@@ -628,7 +648,7 @@ int zrhhdr(char *hdr)
 
 /* Send a byte as two hex digits */
 /*void zputhex(int c) */
-void zputhex(int c)
+void ZModem::zputhex(int c)
 {
   static constexpr char digits[17] = "0123456789abcdef";
 
@@ -638,11 +658,11 @@ void zputhex(int c)
   sendline(pgm_read_byte(digits+((c)&0xF)));
 }
 
-void sendline(char c) {
+void ZModem::sendline(char c) {
   sendline((int) c);
 }
 
-void sendline(int c){
+void ZModem::sendline(int c){
   // Check if buffer is more than half full
   if (ZSERIAL.availableForWrite() < (SERIAL_TX_BUFFER_SIZE / 2)) {
     ZSERIAL.flush(); // Wait for outgoing data to complete
@@ -655,11 +675,11 @@ void sendline(int c){
  * Send character c with ZMODEM escape sequence encoding.
  *  Escape XON, XOFF. Escape CR following @ (Telenet net escape)
  */
-void zsendline(char c) {
+void ZModem::zsendline(char c) {
   zsendline((int)c);
 }
 
-void zsendline(int c)
+void ZModem::zsendline(int c)
 {
   /* check for non-control characters */
   if (c & 0140)
@@ -704,7 +724,7 @@ void zsendline(int c)
 
 /* Decode two lower case hex digits into an 8 bit byte value */
 
-int zgethex(void)
+int ZModem::zgethex(void)
 {
   int c, n;
 
@@ -732,7 +752,7 @@ int zgethex(void)
  * Read a byte, checking for ZMODEM escape encoding
  *  including CAN*5 which represents a quick abort
  */
-int zdlread(void){
+int ZModem::zdlread(){
   int c;
 
 again:
@@ -797,7 +817,7 @@ again2:
  * Read a character from the modem line with timeout.
  *  Eat parity, XON and XOFF characters.
  */
-int noxrd7(void)
+int ZModem::noxrd7(void)
 {
   int c;
 
@@ -805,8 +825,8 @@ int noxrd7(void)
     if ((c = readline(Rxtimeout)) < 0)
       return c;
     switch (c &= 0177) {
-    case ZModem::XON:
-    case ZModem::XOFF:
+    case XON:
+    case XOFF:
       continue;
     default:
       if (Zctlesc && !(c & 0140))
@@ -822,7 +842,7 @@ int noxrd7(void)
 
 
 /* Store long integer pos in Txhdr */
-void stohdr(long pos)
+void ZModem::stohdr(long pos)
 {
   Txhdr[ZP0] = pos;
   Txhdr[ZP1] = pos>>8;
@@ -833,7 +853,7 @@ void stohdr(long pos)
 
 #ifndef NOTDEF
 /* Recover a long integer from a header */
-long rclhdr(char *hdr)
+long ZModem::rclhdr(char *hdr)
 {
   long l;
 
@@ -849,7 +869,7 @@ long rclhdr(char *hdr)
 /*
  * Purge the modem input queue of all characters
  */
-void purgeline(void)
+void ZModem::purgeline(void)
 {
   while(ZSERIAL.available())ZSERIAL.read();
 }
@@ -857,22 +877,22 @@ void purgeline(void)
 /*
  * Local console output simulation
  */
-void bttyout(int c)
+void ZModem::bttyout(int c)
 {
 #ifndef ARDUINO
   if (Verbose || Fromcu)
     putc(c, stderr);
 #endif
 }
-//
-// void flushmo(void)
-// {
-//   ZSERIAL.flush();
-// }
+
+void ZModem::flushmo(void)
+{
+  ZSERIAL.flush();
+}
 
 
 /* send cancel string to get the other end to shut up */
-void canit(void)
+void ZModem::canit(void)
 {
   for (int i=0; i < 10; ++i) {
     ZSERIAL.write(24);
@@ -883,7 +903,7 @@ void canit(void)
   ZSERIAL.flush();
 }
 
-int readline(int timeout) {
+int ZModem::readline(int timeout) {
   long then;
   unsigned char c;
 
