@@ -7,6 +7,8 @@
  *  USG UNIX (3.0) ioctl conventions courtesy Jeff Martin
  */
 
+int Filesleft;
+long int Totalleft;
 
 #include "zmodem_config.h"
 #include "zmodem_zm.h"
@@ -17,6 +19,7 @@
 //#include "zmodem_crc16.cpp"
 
 #include <stdio.h>
+
 
 #define PATHLEN 64
 
@@ -161,7 +164,7 @@ int ZModemSend::wcs(const char *oname)
  *  as provided by the Unix fstat call.
  *  N.B.: modifies the passed name, may extend it!
  */
-int wctxpn(const char *name)
+int ZModemSend::wctxpn(const char *name)
 {
 
   char *p, *q;
@@ -245,8 +248,8 @@ DSERIAL_PRINTLN("\nwctx");
   fout.close();
   attempts=0;
   do {
-    ZModem::purgeline();
-    ZModem::sendline(ZModem::EOT);
+    purgeline();
+    sendline(EOT);
     ++attempts;
   }
   while ((firstch=(readline(Rxtimeout)) != ACK) && attempts < Tx_RETRYMAX);
@@ -260,7 +263,7 @@ DSERIAL_PRINTLN("\nwctx");
 
 
 
-int ZModem::wcputsec(char *buf,int sectnum,int cseclen)
+int ZModemSend::wcputsec(char *buf,int sectnum,int cseclen)
 {
   int checksum, wcj;
   char *cp;
@@ -276,33 +279,33 @@ int ZModem::wcputsec(char *buf,int sectnum,int cseclen)
     fprintf(stderr, "\rSector %3d %2dk ", Totsecs, Totsecs/8 );
   for (attempts=0; attempts <= Tx_RETRYMAX; attempts++) {
     Lastrx= firstch;
-    ZModem::sendline(cseclen==1024?ZModem::STX:ZModem::SOH);
-    ZModem::sendline(sectnum);
-    ZModem::sendline(-sectnum -1);
+    sendline(cseclen==1024?STX:SOH);
+    sendline(sectnum);
+    sendline(-sectnum -1);
     oldcrc=checksum=0;
     for (wcj=cseclen,cp=buf; --wcj>=0; ) {
-      ZModem::sendline(*cp);
+      sendline(*cp);
       oldcrc=updcrc((0377& *cp), oldcrc);
       checksum += *cp++;
     }
     if (Crcflg) {
       oldcrc = updcrc(0, oldcrc);
       oldcrc = updcrc(0,oldcrc);
-      ZModem::sendline((int)oldcrc>>8);
-      ZModem::sendline((int)oldcrc);
+      sendline((int)oldcrc>>8);
+      sendline((int)oldcrc);
     }
     else
-      ZModem::sendline(checksum);
+      sendline(checksum);
 
     if (Optiong) {
       firstsec = FALSE;
       return OK;
     }
-    firstch = ZModem::readline(Rxtimeout);
+    firstch = readline(Rxtimeout);
 gotnak:
     switch (firstch) {
-    case ZModem::CAN:
-      if(Lastrx == ZModem::CAN) {
+    case CAN:
+      if(Lastrx == CAN) {
 cancan:
         zperr("Cancelled");
         return ERROR;
@@ -314,10 +317,10 @@ cancan:
     case WANTCRC:
       if (firstsec)
         Crcflg = TRUE;
-    case ZModem::NAK:
+    case NAK:
       zperr("NAK on sector");
       continue;
-    case ZModem::ACK:
+    case ACK:
       firstsec=FALSE;
       Totsecs += (cseclen>>7);
       return OK;
@@ -330,11 +333,11 @@ cancan:
     }
     for (;;) {
       Lastrx = firstch;
-      if ((firstch = ZModem::readline(Rxtimeout)) == TIMEOUT)
+      if ((firstch = readline(Rxtimeout)) == TIMEOUT)
         break;
-      if (firstch == ZModem::NAK || firstch == WANTCRC)
+      if (firstch == NAK || firstch == WANTCRC)
         goto gotnak;
-      if (firstch == ZModem::CAN && Lastrx == ZModem::CAN)
+      if (firstch == CAN && Lastrx == CAN)
         goto cancan;
     }
   }
@@ -439,12 +442,12 @@ again:
       continue;
     case ZCAN:
     case TIMEOUT:
-    case ZModem::ZABORT:
-    case ZModem::ZFIN:
+    case ZABORT:
+    case ZFIN:
 DSERIAL_PRINTLN(F("\nzsendfile - ZFIN"));
 
       return ERROR;
-    case ZModem::ZCRC:
+    case ZCRC:
       crc = 0xFFFFFFFFL;
       if (Canseek >= 0) {
         fout.seekSet(0);
@@ -456,15 +459,15 @@ DSERIAL_PRINTLN(F("\nzsendfile - ZFIN"));
 //        fseek(in, 0L, 0);
           fout.seekSet(0);
       }
-      ZModem::stohdr(crc);
-      ZModem::zsbhdr(ZModem::ZCRC, Txhdr);
+      stohdr(crc);
+      zsbhdr(ZCRC, Txhdr);
       goto again;
-    case ZModem::ZSKIP:
+    case ZSKIP:
       fout.close();
       //fclose(in);
 DSERIAL_PRINTLN(F("\nzsendfile - ZSKIP"));
       return c;
-    case ZModem::ZRPOS:
+    case ZRPOS:
       /*
        * Suppress zcrcw request otherwise triggered by
        * lastyunc==bytcnt
@@ -474,7 +477,7 @@ DSERIAL_PRINTLN(F("\nzsendfile - ZSKIP"));
       if(Rxpos && !fout.seekSet(Rxpos))
         return ERROR;
       Lastsync = (bytcnt = Txpos = Rxpos) -1;
-      int ret = ZModem::zsendfdata();
+      int ret = zsendfdata();
 DSERIAL_PRINT(F("\nzsendfile - exit - "));
 DSERIAL_PRINTLN(ret);
       return(ret);
@@ -514,14 +517,14 @@ gotack:
       //fclose(in);
 DSERIAL_PRINTLN(F("zsendfdata - error - 1"));
       return ERROR;
-    case ZModem::ZSKIP:
+    case ZSKIP:
       fout.close();
       //fclose(in);
       return c;
-    case ZModem::ZACK:
-    case ZModem::ZRPOS:
+    case ZACK:
+    case ZRPOS:
       break;
-    case ZModem::ZRINIT:
+    case ZRINIT:
       return OK;
     }
 #ifdef READCHECK
@@ -535,15 +538,15 @@ DSERIAL_PRINTLN(F("zsendfdata - error - 1"));
 #ifdef SV
       switch (checked)
 #else
-        switch (ZModem::readline(1))
+        switch (readline(1))
 #endif
         {
-        case ZModem::CAN:
-        case ZModem::ZPAD:
-          c = ZModemSend::getinsync(1);
+        case CAN:
+        case ZPAD:
+          c = getinsync(1);
           goto gotack;
-        case ZModem::XOFF:              /* Wait a while for an XON */
-        case ZModem::XOFF |0x80:
+        case XOFF:              /* Wait a while for an XON */
+        case XOFF |0x80:
           readline(100);
         }
     }
@@ -556,38 +559,38 @@ DSERIAL_PRINTLN("zsendfdata - 1");
 //    signal(SIGINT, onintr);
   newcnt = Rxbuflen;
   Txwcnt = 0;
-  ZModem::stohdr(Txpos);
-  ZModem::zsbhdr(ZModem::ZDATA, Txhdr);
+  stohdr(Txpos);
+  zsbhdr(ZDATA, Txhdr);
 
 DSERIAL_PRINTLN("zsendfdata - 2");
 
   do {
-    n = ZModemSend::zfilbuf();
+    n = zfilbuf();
 // AHA - it reads the 18 chars here
 DSERIAL_PRINTLN(n);
     if (Eofseen)
-      e = ZModem::ZCRCE;
+      e = ZCRCE;
     else if (junkcount > 3)
-      e = ZModem::ZCRCW;
+      e = ZCRCW;
     else if (bytcnt == Lastsync)
-      e = ZModem::ZCRCW;
+      e = ZCRCW;
     else if (Rxbuflen && (newcnt -= n) <= 0)
-      e = ZModem::ZCRCW;
+      e = ZCRCW;
     else if (Txwindow && (Txwcnt += n) >= Txwspac) {
       Txwcnt = 0;
-      e = ZModem::ZCRCQ;
+      e = ZCRCQ;
     }
     else
-      e = ZModem::ZCRCG;
+      e = ZCRCG;
     if (Verbose>1)
       fprintf(stderr, "\r%7ld ZMODEM%s    ",Txpos, Crc32t?" CRC-32":"");
-    ZModem::zsdata(txbuf, n, e);
+    zsdata(txbuf, n, e);
     bytcnt = Txpos += n;
-    if (e == ZModem::ZCRCW)
+    if (e == ZCRCW)
       goto waitack;
 #ifdef READCHECK
     /*
-                 * If the reverse channel can be tested for data,
+     * If the reverse channel can be tested for data,
      *  this logic may be used to detect error packets
      *  sent by the receiver, in place of setjmp/longjmp
      *  rdchk(fdes) returns non 0 if a character is available
@@ -597,23 +600,23 @@ DSERIAL_PRINTLN(n);
 #ifdef SV
       switch (checked)
 #else
-        switch (ZModem::readline(1))
+        switch (readline(1))
 #endif
         {
-        case ZModem::CAN:
-        case ZModem::ZPAD:
+        case CAN:
+        case ZPAD:
           c = ZModemSend::getinsync(1);
-          if (c == ZModem::ZACK)
+          if (c == ZACK)
             break;
 #ifdef TCFLSH
           ioctl(iofd, TCFLSH, 1);
 #endif
           /* zcrce - dinna wanna starta ping-pong game */
-          ZModem::zsdata(txbuf, 0, ZModem::ZCRCE);
+          zsdata(txbuf, 0, ZCRCE);
           goto gotack;
-        case ZModem::XOFF:              /* Wait a while for an XON */
-        case ZModem::XOFF|0200:
-          ZModem::readline(100);
+        case XOFF:              /* Wait a while for an XON */
+        case XOFF|0200:
+          readline(100);
         default:
           ++junkcount;
         }
@@ -629,7 +632,7 @@ DSERIAL_PRINTLN("zsendfdata - 4");
 
   for (;;) {
     stohdr(Txpos);
-    ZModem::zsbhdr(ZEOF, Txhdr);
+    zsbhdr(ZEOF, Txhdr);
     switch (getinsync(0)) {
     case ZACK:
 DSERIAL_PRINTLN(F("zsendfdata - ZAK"));
@@ -640,7 +643,7 @@ DSERIAL_PRINTLN(F("zsendfdata - ZRPOS"));
     case ZRINIT:
 DSERIAL_PRINTLN(F("zsendfdata - OK"));
       return OK;
-    case ZModem::ZSKIP:
+    case ZSKIP:
       fout.close();
       //fclose(in);
 DSERIAL_PRINTLN(F("zsendfdata - ZSKIP"));
@@ -712,7 +715,7 @@ DSERIAL_PRINTLN(F("getinsync - fseek"));
       return c;
     case ERROR:
     default:
-      zsbhdr(ZModem::ZNAK, Txhdr);
+      zsbhdr(ZNAK, Txhdr);
       continue;
     }
   }
@@ -760,8 +763,8 @@ void ZModemSend::zmodem_send_file(char* param) {
     ASERIAL.println(F("file.open failed"));
   } else {
     // Start the ZMODEM transfer
-    Filesleft = 1;
-    Totalleft = fout.fileSize();
+    int Filesleft = 1;
+    int Totalleft = fout.fileSize();
     ZSERIAL.print(F("rz\n"));
     ZSERIAL.flush();
     sendzrqinit();
@@ -773,3 +776,54 @@ void ZModemSend::zmodem_send_file(char* param) {
 }
 
 
+/* Send ZMODEM binary header hdr of type type */
+void ZModemSend::zsbhdr(int type, char *hdr)
+{
+
+
+  vfile(F("zsbhdr: %s %lx"), frametypes[type+FTOFFSET], rclhdr(hdr));
+  /*  if (type == ZDATA)
+      for (n = Znulls; --n >=0; )
+        sendline(0);
+  */
+  sendline(ZPAD);
+  sendline(ZDLE);
+  //Pete (El Supremo) This looks wrong but it is correct - the code fails if == is used
+  if ((Crc32tx = Txfcs32)) {
+    int n;
+    unsigned long crc;
+
+    sendline(ZBIN32);
+    zsendline(type);
+    crc = 0xFFFFFFFFL;
+    crc = UPDC32(type, crc);
+
+    for (n=4; --n >= 0; ++hdr) {
+      crc = UPDC32((0377 & *hdr), crc);
+      zsendline(*hdr);
+    }
+    crc = ~crc;
+    for (n=4; --n >= 0;) {
+      zsendline((int)crc);
+      crc >>= 8;
+    }
+  } else {
+    int n;
+    unsigned short crc=0;
+
+    sendline(ZBIN);
+    zsendline(type);
+    crc = updcrc(type, crc);
+
+    for (n=4; --n >= 0; ++hdr) {
+      zsendline(*hdr);
+      crc = updcrc((0377& *hdr), crc);
+    }
+    crc = updcrc(0,crc);
+    crc = updcrc(0,crc);
+    zsendline(crc>>8);
+    zsendline(crc);
+  }
+  if (type != ZDATA)
+    flushmo();
+}

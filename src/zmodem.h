@@ -33,6 +33,7 @@
 
 #define ZATTNLEN  0x20	/* Max length of attention string */
 
+#define Verbose 0
 
 /* Bit Masks for ZSINIT flags byte ZF0 */
 #define TESCCTL 0100    /* Transmitter expects ctl chars to be escaped */
@@ -213,9 +214,7 @@ protected:
 
     // static int wcs(const char *oname);
    // static int wctxpn(const char *name);
-    static int wcputsec(char *buf, int sectnum, int cseclen);
 
-    static int zsendfdata();
 
     // receive-side helpers
     static int wcreceive(int argc, char **argp);
@@ -233,7 +232,6 @@ protected:
 
 
     // protocol primitives
-    static void zsbhdr(int type, char *hdr);
     static void zshhdr(int type, char *hdr);
     static void zsdata(char *buf, int length, int frameend);
     static int zrdata(char *buf, int length);

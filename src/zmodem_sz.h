@@ -7,7 +7,6 @@ class ZModemSend: public ZModem {
     public:
     ZModemSend();
 
-    void send_file(char* param);
     static int wctxpn(const char *name);
     static int wcs(const char *oname);
     static int zsendfile(char *buf, int blen);
@@ -18,17 +17,10 @@ class ZModemSend: public ZModem {
     static int filbuf(char *buf, int count);
     static int zfilbuf();
     static int zsendfdata();
-
+    static void zsbhdr(int type, char *hdr);
+    static int wcputsec(char *buf, int sectnum, int cseclen);
     static void zmodem_send_file(char* param);
 };
-
-// void zmodem_send_file(char* param);
-
-// moved to ZModem class
-// int wcs(const char* oname);
-// int wctxpn(const char* name);
-// void sendzrqinit();
-// void ZModem::saybibi();
 
 extern int Filesleft;
 extern long Totalleft;

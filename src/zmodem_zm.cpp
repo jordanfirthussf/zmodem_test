@@ -63,7 +63,7 @@ long rxbytes;   // from rz - Shared with sz Lrxpos
 int Blklen;     // from rz - Shared with sz blklen
 
 #define Rxtimeout 100            /* Tenths of seconds to wait for something */
-#define Verbose 0
+
 
 // This buffer blends Txb (from sz) and secbuf (from rz) into a single buffer, saving 1K
 // of memory.
@@ -108,57 +108,6 @@ uint8_t errors;
 
 
 
-/* Send ZMODEM binary header hdr of type type */
-void ZModem::zsbhdr(int type, char *hdr)
-{
-
-
-  vfile(F("zsbhdr: %s %lx"), frametypes[type+FTOFFSET], rclhdr(hdr));
-/*  if (type == ZDATA)
-    for (n = Znulls; --n >=0; )
-      sendline(0);
-*/
-  sendline(ZModem::ZPAD);
-  sendline(ZModem::ZDLE);
-//Pete (El Supremo) This looks wrong but it is correct - the code fails if == is used
-  if ((Crc32tx = Txfcs32)) {
-    int n;
-    unsigned long crc;
-  
-    sendline(ZModem::ZBIN32);
-    zsendline(type);
-    crc = 0xFFFFFFFFL; 
-    crc = UPDC32(type, crc);
-  
-    for (n=4; --n >= 0; ++hdr) {
-      crc = UPDC32((0377 & *hdr), crc);
-      zsendline(*hdr);
-    }
-    crc = ~crc;
-    for (n=4; --n >= 0;) {
-      zsendline((int)crc);
-      crc >>= 8;
-    }
-  } else {
-    int n;
-    unsigned short crc=0;
-    
-    sendline(ZModem::ZBIN);
-    zsendline(type); 
-    crc = updcrc(type, crc);
-
-    for (n=4; --n >= 0; ++hdr) {
-      zsendline(*hdr);
-      crc = updcrc((0377& *hdr), crc);
-    }
-    crc = updcrc(0,crc);
-    crc = updcrc(0,crc);
-    zsendline(crc>>8);
-    zsendline(crc);
-  }
-  if (type != ZModem::ZDATA)
-    ZModem::flushmo();
-}
 
 
 /* Send ZMODEM HEX header hdr of type type */
