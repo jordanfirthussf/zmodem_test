@@ -123,14 +123,9 @@ int sendzsinit(void);
 //void ZModem::bttyout(int c);
 int zsendcmd(char *buf, int blen);
 
-ZModemSend::ZModemSend() {}
 
+ZModemSend::ZModemSend() = default;
 
-// #ifndef ARDUINO
-// FILE *fout;
-// #else
-// extern FsFile fout;
-// #endif
 
 int ZModemSend::wcs(const char *oname)
 {
@@ -207,7 +202,7 @@ DSERIAL_PRINT(F("  length = ")); DSERIAL_PRINTLN(Totalleft);
   }
 
 
-  return ZModemSend::zsendfile(txbuf, 1+strlen(p)+(p-txbuf));
+  return zsendfile(txbuf, 1+strlen(p)+(p-txbuf));
 }
 
 

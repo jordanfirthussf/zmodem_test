@@ -34,12 +34,7 @@ extern uint8_t Not8bit;         /* Seven bits seen on header */
 //extern char *frametypes[];
 
 extern uint32_t Baudrate;
-// #define xsendline(c) sendline(c)
 
-// inline void xsendline(int c) {
-// 	sendline(c);
-// }
-//int readline(int timeout);
 
 
 #define OK 0
@@ -61,9 +56,6 @@ extern uint32_t Baudrate;
 #define zperr(...)
 #endif
 
-// moved to ZModem class:
-// void bttyout(int c);
-
 #define Zmodem 1           /* ZMODEM protocol requested */
 // extern uint8_t Verbose;
 extern char zconv;             /* ZMODEM file conversion request */
@@ -83,14 +75,4 @@ extern uint8_t firstsec;
 extern char Lastrx;
 extern char Crcflg;
 extern uint8_t errors;
-// This is declared in the main sketch .ino
-//extern char *Progname;
 
-// Legacy C-style ZMODEM primitives are now available as static methods on ZModem.
-
-// moved to ZModem class:
-// void sendline(int c);
-// void sendline(char c);
-
-// moved to ZModem class:
-// unsigned short updcrc(uint8_t cp, uint16_t& crc);

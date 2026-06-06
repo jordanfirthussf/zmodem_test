@@ -11,25 +11,14 @@ FsFile fout;
 #include <SPI.h>
 
 #include "zmodem_config.h"
-#include "zmodem_zm.h"
 #include "zmodem_sz.h"
 // #include "zmodem_rz.h"
-//#include <SdFatUtil.h>
-
-
-// SdFat asdfSD;
-// FsFile myFile;
-// File32 myFile;
 #define SD_CS_PIN SD_SEL
 // SdSpiConfig config(SD_CS_PIN, DEDICATED_SPI, SD_SCK_MHZ(16), &SPI1);
 
-
-
 // #define TXBSIZE 1024 // tx buffer size (default 1024); must be a power of 2
 
-
 #define error(s) sd.errorHalt(s)
-
 
 #if defined(ARDUINO_ARCH_RP2040)
   #define SD_CONFIG SdSpiConfig(SD_SEL, DEDICATED_SPI, SD_SCK_MHZ(16), &SPI1)
