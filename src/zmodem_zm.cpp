@@ -34,28 +34,6 @@
 #include "zmodem.h"
 #endif
 #endif
-//
-// using ZModem::zsbhdr;
-// using ZModem::zshhdr;
-// using ZModem::zsdata;
-// using ZModem::zrdata;
-// using ZModem::zgethdr;
-// using ZModem::zrbhdr;
-// using ZModem::zrbhdr32;
-// using ZModem::zrhhdr;
-// using ZModem::zputhex;
-// using ZModem::zsendline;
-// using ZModem::sendline;
-// using ZModem::zgethex;
-// using ZModem::zdlread;
-// using ZModem::noxrd7;
-// using ZModem::stohdr;
-// using ZModem::rclhdr;
-// using ZModem::purgeline;
-// using ZModem::bttyout;
-// using ZModem::canit;
-// using ZModem::readline;
-// using ZModem::updcrc;
 
 // Shared globals
 long Bytesleft; // from rz - Shared with sz bytcnt
@@ -108,7 +86,13 @@ uint8_t errors;
 
 
 
+ZModem::ZModem() = default;
 
+void ZModem::begin(Stream &serial) {
+  _serial = &serial;
+
+
+}
 
 /* Send ZMODEM HEX header hdr of type type */
 void ZModem::zshhdr(int type,char *hdr)

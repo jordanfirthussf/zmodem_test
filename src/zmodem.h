@@ -199,10 +199,10 @@ class ZModem {
 
     ZModem();
 
-    void begin(Stream &serial);
+    static void begin(Stream &serial);
 
 protected:
-    Stream *_serial;
+    static Stream *_serial;
 
     // function definitions
     static int zdlread();
@@ -222,13 +222,13 @@ protected:
     static int wcrx();
     static int wcgetsec(char *rxbuf, int maxtime);
     static int procheader(const char *name);
-    static void bibi(int n);
     static void canit();
     static void purgeline();
-    static void ackbibi();
     static int rzfiles();
     static int rzfile();
 
+    // belong in RZ
+    static void ackbibi();
 
 
     // protocol primitives
@@ -240,10 +240,8 @@ protected:
     static int zrbhdr32(char *hdr);
     static int zrhhdr(char *hdr);
     static void zputhex(int c);
-    static void zsendline(int c);
-    static void zsendline(char c);
-    static void sendline(int c);
-    static void sendline(char c);
+    static void zsendline(int c); static void zsendline(char c);
+    static void sendline(int c); static void sendline(char c);
     static unsigned short updcrc(uint8_t cp, uint16_t& crc);
     static void bttyout(int c);
     static void stohdr(long pos);
@@ -306,13 +304,6 @@ void vfile();
 #define vfile(a, ... )
 #endif
 
-// moved to ZModem class:
-// void bibi(int n);
-
-// moved to ZModem class:
-// int wctxpn(char *name, FsFile *file);
-// int wcrx();
-
 
 // #define CPMEOF 032
 // #define WANTCRC 0103    /* send C not NAK to get crc not checksum */
@@ -321,7 +312,6 @@ void vfile();
 // #define RCDO (-3)
 // #define Tx_RETRYMAX 10
 // #define Rx_RETRYMAX 5
-
 
 
 

@@ -21,6 +21,8 @@ class ZModemSend: public ZModem {
     static void zsbhdr(int type, char *hdr);
     static int wcputsec(char *buf, int sectnum, int cseclen);
     static void zmodem_send_file(char* param);
+    // static void bibi(int n);
+
 };
 
 extern int Filesleft;
