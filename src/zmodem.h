@@ -202,7 +202,7 @@ class ZModem {
     static void begin(Stream &serial);
 
 protected:
-    static Stream *_serial;
+    // static Stream *_serial;
 
     // function definitions
     static int zdlread();

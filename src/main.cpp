@@ -32,6 +32,7 @@ constexpr unsigned char test_file[] = {
 };
 constexpr size_t test_file_len = sizeof(test_file);
 
+ZModemSend zModemSend;
 
 void setup() {
 
@@ -64,6 +65,8 @@ ASERIAL.println(F("SdCard setup complete"));
   // fout  = sd.open("test.txt", FILE_WRITE);
   // myFile.println("testing");
   // myFile.close();
+
+  zModemSend.begin(ZSERIAL);
 
   delay(5000);
 

@@ -732,7 +732,8 @@ void ZModemSend::sendzrqinit(void)
   constexpr char ZRQINIT[22] = "\x2a\x2a\x18\x42\x30\x30\x30\x30\x30\x30\x30\x30\x30\x30\x30\x30\x30\x30\x0d\x0a\x11";
 // **␘B (14 zeros) CR-LF-DC1
 // <ZPAD><ZPAD><ZDLE><ZHEX>)(14 zeros) CR-LF-<XON>
-  ZSERIAL.print(ZRQINIT);
+
+    _serial->print(ZRQINIT);
 }
 
 /* Say "bibi" to the receiver, try to do it cleanly */
@@ -821,4 +822,11 @@ void ZModemSend::zsbhdr(int type, char *hdr)
   }
   if (type != ZDATA)
     flushmo();
+}
+
+
+void ZModemSend::begin(Stream &serial) {
+  _serial = &serial;
+
+
 }

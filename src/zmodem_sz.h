@@ -7,6 +7,8 @@
 class ZModemSend: public ZModem {
     public:
     ZModemSend();
+    void begin(Stream &serial);
+
 
     static int wctxpn(const char *name);
     static int wcs(const char *oname);
