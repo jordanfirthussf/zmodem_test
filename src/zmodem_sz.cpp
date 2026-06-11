@@ -20,6 +20,8 @@ long int Totalleft;
 
 #include <stdio.h>
 
+Stream *ZModemSend::_serial = nullptr;
+
 
 #define PATHLEN 64
 
@@ -127,6 +129,14 @@ int zsendcmd(char *buf, int blen);
 ZModemSend::ZModemSend() = default;
 
 
+/**
+ * asdf
+ * @brief wildcard send (wcs) processes file paths with wildcards (e.g. * or ?)
+ *    and prepare them for batch transmission
+ *
+ * @param
+ * @return
+ */
 int ZModemSend::wcs(const char *oname)
 {
 //  char name[PATHLEN];
@@ -145,10 +155,10 @@ int ZModemSend::wcs(const char *oname)
   }
 
 //  ++Filcnt;
-  if(!Zmodem && wctx(fout.fileSize())==ERROR) {
+  // if(!Zmodem && wctx(fout.fileSize())==ERROR) {
+  //   return ERROR;
+  // }
     return ERROR;
-  }
-    return 0;
 }
 
 
@@ -205,58 +215,64 @@ DSERIAL_PRINT(F("  length = ")); DSERIAL_PRINTLN(Totalleft);
   return zsendfile(txbuf, 1+strlen(p)+(p-txbuf));
 }
 
-
-int ZModemSend::wctx(long flen)
-{
-  int thisblklen;
-  int sectnum, attempts, firstch;
-  long charssent;
-
-DSERIAL_PRINTLN("\nwctx");
-
-  charssent = 0;
-  firstsec=TRUE;
-  thisblklen = blklen;
-
-  while ((firstch=readline(Rxtimeout))!= NAK && firstch != WANTCRC
-    && firstch != WANTG && firstch!=TIMEOUT && firstch!= CAN)
-    ;
-  if (firstch== CAN) {
-    zperr("Receiver CANcelled");
-    return ERROR;
-  }
-  if (firstch==WANTCRC)
-    Crcflg=TRUE;
-  if (firstch==WANTG)
-    Crcflg=TRUE;
-  sectnum=0;
-  for (;;) {
-    if (flen <= (charssent + 896L))
-      thisblklen = 128;
-    if ( !filbuf(txbuf, thisblklen))
-      break;
-    if (wcputsec(txbuf, ++sectnum, thisblklen)==ERROR)
-      return ERROR;
-    charssent += thisblklen;
-  }
-  //fclose(in);
-  fout.close();
-  attempts=0;
-  do {
-    purgeline();
-    sendline(EOT);
-    ++attempts;
-  }
-  while ((firstch=(readline(Rxtimeout)) != ACK) && attempts < Tx_RETRYMAX);
-  if (attempts == Tx_RETRYMAX) {
-    zperr("No ACK on EOT");
-    return ERROR;
-  }
-  else
-    return OK;
-}
-
-
+// /**
+// * @brief ??
+//  *
+//  * @param flen The size of the file to be transmitted, in bytes.
+//  * @return OK (0) if the file is sent successfully, ERROR (-1) in case of failure,
+//  *         such as receiver cancellation or maximum retry attempts exceeded.
+//  */
+// int ZModemSend::wctx(long flen)
+// {
+//   int thisblklen;
+//   int sectnum, attempts, firstch;
+//   long charssent;
+//
+// DSERIAL_PRINTLN("\nwctx");
+//
+//   charssent = 0;
+//   firstsec=TRUE;
+//   thisblklen = blklen;
+//
+//   while ((firstch=readline(Rxtimeout))!= NAK && firstch != WANTCRC
+//     && firstch != WANTG && firstch!=TIMEOUT && firstch!= CAN)
+//     ;
+//   if (firstch== CAN) {
+//     zperr("Receiver CANcelled");
+//     return ERROR;
+//   }
+//   if (firstch==WANTCRC)
+//     Crcflg=TRUE;
+//   if (firstch==WANTG)
+//     Crcflg=TRUE;
+//   sectnum=0;
+//   for (;;) {
+//     if (flen <= (charssent + 896L))
+//       thisblklen = 128;
+//     if ( !filbuf(txbuf, thisblklen))
+//       break;
+//     if (wcputsec(txbuf, ++sectnum, thisblklen)==ERROR)
+//       return ERROR;
+//     charssent += thisblklen;
+//   }
+//   //fclose(in);
+//   fout.close();
+//   attempts=0;
+//   do {
+//     purgeline();
+//     sendline(EOT);
+//     ++attempts;
+//   }
+//   while ((firstch=(readline(Rxtimeout)) != ACK) && attempts < Tx_RETRYMAX);
+//   if (attempts == Tx_RETRYMAX) {
+//     zperr("No ACK on EOT");
+//     return ERROR;
+//   }
+//   else
+//     return OK;
+// }
+//
+//
 
 int ZModemSend::wcputsec(char *buf,int sectnum,int cseclen)
 {
@@ -529,7 +545,7 @@ DSERIAL_PRINTLN(F("zsendfdata - error - 1"));
      *  sent by the receiver, in place of setjmp/longjmp
      *  rdchk(fdes) returns non 0 if a character is available
      */
-    while (ZSERIAL.available()) {
+    while (_serial->available()) {
 #ifdef SV
       switch (checked)
 #else
@@ -591,7 +607,7 @@ DSERIAL_PRINTLN(n);
      *  rdchk(fdes) returns non 0 if a character is available
      */
 //    fflush(stdout);
-    while (ZSERIAL.available()) {
+    while (_serial->available()) {
 #ifdef SV
       switch (checked)
 #else
@@ -761,8 +777,8 @@ void ZModemSend::zmodem_send_file(char* param) {
     // Start the ZMODEM transfer
     int Filesleft = 1;
     int Totalleft = fout.fileSize();
-    ZSERIAL.print(F("rz\n"));
-    ZSERIAL.flush();
+    _serial->print(F("rz\n"));
+    _serial->flush();
     sendzrqinit();
     delay(200);
     wcs(param);

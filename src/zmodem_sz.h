@@ -14,7 +14,7 @@ class ZModemSend: public ZModem {
     static int wcs(const char *oname);
     static int zsendfile(char *buf, int blen);
     static void sendzrqinit();
-    static int wctx(long flen);
+    // static int wctx(long flen);
     static void saybibi();
     static int getinsync(int flag);
     static int filbuf(char *buf, int count);
@@ -24,6 +24,10 @@ class ZModemSend: public ZModem {
     static int wcputsec(char *buf, int sectnum, int cseclen);
     static void zmodem_send_file(char* param);
     // static void bibi(int n);
+
+protected:
+    static Stream *_serial;
+
 
 };
 

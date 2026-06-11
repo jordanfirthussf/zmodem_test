@@ -88,12 +88,6 @@ uint8_t errors;
 
 ZModem::ZModem() = default;
 
-void ZModem::begin(Stream &serial) {
-  _serial = &serial;
-
-
-}
-
 /* Send ZMODEM HEX header hdr of type type */
 void ZModem::zshhdr(int type,char *hdr)
 {
