@@ -673,7 +673,7 @@ void ZModemSend::saybibi() {
     case ZFIN:
       _serial->write('O');
       _serial->write('O');
-      flushmo();
+      _serial->flush();
     case ZCAN:
     case TIMEOUT:
       return;
@@ -684,7 +684,7 @@ void ZModemSend::saybibi() {
 
 void ZModemSend::zmodem_send_file(FsFile &file) {
   if (!file.isOpen()) {
-    ASERIAL.println(F("file not open"));
+    ASERIAL_PRINTLN(F("file not open"));
   } else {
     _fout = &file;
     char name[PATHLEN];
@@ -752,6 +752,6 @@ void ZModemSend::zsbhdr(int type, char *hdr)
     zsendline(crc);
   }
   if (type != ZDATA)
-    flushmo();
+    _serial->flush();
 }
 

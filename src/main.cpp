@@ -6,15 +6,22 @@
 #include <SdFat.h>
 
 SdFs sd;
-// FsFile fout;
 
 #include <SPI.h>
 
 #include "zmodem_config.h"
 #include "zmodem_sz.h"
-// #include "zmodem_rz.h"
-#define SD_CS_PIN SD_SEL
-// SdSpiConfig config(SD_CS_PIN, DEDICATED_SPI, SD_SCK_MHZ(16), &SPI1);
+///// SD Card CS pin
+  #if defined(ARDUINO_SEEED_XIAO_ESP32S3) || defined(ARDUINO_XIAO_ESP32S3)
+  #define SD_SEL 21 // XIAO ESP32S3
+  #elif defined(ARDUINO_ADAFRUIT_FEATHER_RP2040_ADALOGGER) || defined(ARDUINO_ARCH_RP2040)
+  #define SD_SEL 23 // Feather RP2040 adalogger
+  #elif defined(ARDUINO_ESP32_THING_PLUS_C)
+  #define SD_SEL 5 // SparkFun ESP32 Thing Plus C
+  #else
+  #define SD_SEL 21 // Default
+  #endif
+
 
 // #define TXBSIZE 1024 // tx buffer size (default 1024); must be a power of 2
 
@@ -26,49 +33,51 @@ SdFs sd;
   #define SD_CONFIG SdSpiConfig(SD_SEL, DEDICATED_SPI, SD_SCK_MHZ(16))
 #endif
 
-
-ZModemSend zModemSend;
-
 void setup() {
 
   
-  ZSERIAL.begin(115200);
-  ZSERIAL.setTimeout(TYPICAL_SERIAL_TIMEOUT);
+  ZSERIAL_BEGIN(115200);
+  ZSERIAL_SET_TIMEOUT(TYPICAL_SERIAL_TIMEOUT);
   delay(2000);
 
-  ZSERIAL.println("beginning");
+  ZSERIAL_PRINTLN("beginning");
 
   DSERIAL_BEGIN(9600);
   DSERIAL_SET_TIMEOUT(1200);
 
-  ASERIAL.println(Progname);
-  ASERIAL.print(F("Transfer rate: "));
-  ASERIAL.println(ZMODEM_SPEED);
+  ASERIAL_PRINTLN(Progname);
+  ASERIAL_PRINT(F("Transfer rate: "));
+  ASERIAL_PRINTLN(ZMODEM_SPEED);
 
-  ASERIAL.println(F("Regular SD Card\n"));
+  ASERIAL_PRINTLN(F("Regular SD Card\n"));
 
   // Initialize the SdCard.
-  ASERIAL.println(F("About to initialize SdCard"));
+  ASERIAL_PRINTLN(F("About to initialize SdCard"));
   if (!sd.begin(SD_CONFIG)) {
     sd.initErrorHalt(&ASERIAL);
   }
   // depending upon your SdCard environment, SPI_HALF_SPEED may work better.
-  ASERIAL.println(F("About to change directory"));
+  ASERIAL_PRINTLN(F("About to change directory"));
   // if(!sd.chdir((const char *)("/"))) sd.errorHalt(F("sd.chdir"));
-  ASERIAL.println(F("SdCard setup complete"));
+  ASERIAL_PRINTLN(F("SdCard setup complete"));
 
-  // fout  = sd.open("test.txt", FILE_WRITE);
-  // myFile.println("testing");
-  // myFile.close();
+  FsFile fout  = sd.open("test.txt", O_WRONLY | O_CREAT | O_TRUNC);
+  fout.println("testing");
+  fout.close();
 
-  zModemSend.begin(ZSERIAL);
+  ZModemSend::begin(Serial);
 
   delay(5000);
 
-  char cmd[14] = "flightA.csv";
-  FsFile file = sd.open(cmd, O_READ);
+  // char cmd[14] = "flightA.csv";
+  // char cmd[9] = "test.txt";
+  // FsFile file = sd.open("test.txt", O_READ);
 
-  ZModemSend::zmodem_send_file(file);
+  fout  = sd.open("test.txt", O_READ);
+  ZModemSend::zmodem_send_file(fout);
+
+  fout.close();
+
 }
 
 void loop() {

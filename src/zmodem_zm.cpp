@@ -120,7 +120,7 @@ void ZModem::zshhdr(int type,char *hdr)
    */
   if (type != ZModem::ZFIN && type != ZModem::ZACK)
     _serial->write(021);
-  ZModem::flushmo();
+  _serial->flush();
 }
 
 /// @brief update CRC (cyclic redundancy check), the error correction used by ZModem
@@ -192,7 +192,7 @@ void ZModem::zsdata(char *buf,int length,int frameend)
   }
   if (frameend == ZModem::ZCRCW) {
     _serial->write(ZModem::XON);
-    ZModem::flushmo();
+    _serial->flush();
   }
 }
 
@@ -519,7 +519,6 @@ void ZModem::zsendline(int c)
 {
   /* check for non-control characters */
   if (c & 0140)
-    // sendline(lastsent = c);
     _serial->write(lastsent = c);
 
   else {
@@ -713,11 +712,6 @@ void ZModem::bttyout(int c)
   if (Verbose || Fromcu)
     putc(c, stderr);
 #endif
-}
-
-void ZModem::flushmo(void)
-{
-  _serial->flush();
 }
 
 

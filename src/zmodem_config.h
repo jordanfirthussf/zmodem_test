@@ -7,21 +7,10 @@
 	#define TXBSIZE 1024 // must be power of 2
 #endif
 
-#define SERIAL_TX_BUFFER_SIZE 128
-
-// Dylan (monte_carlo_ecm, bitflipper, etc.) - changed serial read/write to macros to try to squeeze
-// out higher speed
+#define SERIAL_TX_BUFFER_SIZE 32
 
 #define READCHECK
 #define TYPICAL_SERIAL_TIMEOUT 1200
-
-#if defined(ARDUINO_SEEED_XIAO_ESP32S3) || defined(ARDUINO_XIAO_ESP32S3)
-    #define SD_SEL 21 // XIAO ESP32S3
-#elif defined(ARDUINO_ADAFRUIT_FEATHER_RP2040_ADALOGGER) || defined(ARDUINO_ARCH_RP2040)
-    #define SD_SEL 23 // Feather RP2040 adalogger
-#else
-    #define SD_SEL 21 // Default
-#endif
 
 /*
  * can function with
@@ -68,8 +57,41 @@
 		#define DSERIAL_AVAILABLE(...)
 	#endif
 
+// #define ZSERIAL Serial
+// #define ZSERIAL_BEGIN(...) ZSERIAL.begin(__VA_ARGS__)
+// #define ZSERIAL_SET_TIMEOUT(...) ZSERIAL.setTimeout(__VA_ARGS__)
+// #define ZSERIAL_PRINT(...) ZSERIAL.print(__VA_ARGS__)
+// #define ZSERIAL_PRINTLN(...) ZSERIAL.println(__VA_ARGS__)
+// #define ZSERIAL_WRITE(...) ZSERIAL.write(__VA_ARGS__)
+// #define ZSERIAL_FLUSH(...) ZSERIAL.flush(__VA_ARGS__)
+// #define ZSERIAL_READ(...) ZSERIAL.read()
+// #define ZSERIAL_AVAILABLE(...) ZSERIAL.available()
+//
+// #define ASERIAL_BEGIN(...) ASERIAL.begin(__VA_ARGS__)
+// #define ASERIAL_PRINT(...) ASERIAL.print(__VA_ARGS__)
+// #define ASERIAL_PRINTLN(...) ASERIAL.println(__VA_ARGS__)
+// #define ASERIAL_WRITE(...) ASERIAL.write(__VA_ARGS__)
+// #define ASERIAL_AVAILABLE(...) ASERIAL.available()
+// #define ASERIAL_READ(...) ASERIAL.read()
+// #define ZMODEM_SPEED 9600 // adjust for your board and needs
+
 #define ZSERIAL Serial
-#define ZMODEM_SPEED 9600 // adjust for your board and needs
+#define ZSERIAL_BEGIN(...)
+#define ZSERIAL_SET_TIMEOUT(...)
+#define ZSERIAL_PRINT(...)
+#define ZSERIAL_PRINTLN(...)
+#define ZSERIAL_WRITE(...)
+#define ZSERIAL_FLUSH(...)
+#define ZSERIAL_READ(...)
+#define ZSERIAL_AVAILABLE(...)
+
+#define ASERIAL_BEGIN(...)
+#define ASERIAL_PRINT(...)
+#define ASERIAL_PRINTLN(...)
+#define ASERIAL_WRITE(...)
+#define ASERIAL_AVAILABLE(...)
+#define ASERIAL_READ(...)
+#define ZMODEM_SPEED(...) // adjust for your board and needs
 
 #include "Arduino.h"
 

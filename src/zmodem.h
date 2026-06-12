@@ -206,7 +206,6 @@ protected:
 
     // function definitions
     static int zdlread();
-    static void flushmo();
     static int readline(int timeout);
     static int zgethex();
 
