@@ -22,7 +22,7 @@ class ZModemSend: public ZModem {
     static int zsendfdata();
     static void zsbhdr(int type, char *hdr);
     static int wcputsec(char *buf, int sectnum, int cseclen);
-    static void zmodem_send_file(char* param);
+    static void zmodem_send_file(FsFile &xxfile);
     // static void bibi(int n);
 
 protected:

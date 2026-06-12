@@ -102,7 +102,7 @@ class ZModem {
         ZCRCQ   = 0x6a, 		/* (j) CRC next, frame continuous, ZACK expected */
         ZCRCW   = 0x6b, 		/* (k) CRC next, frame ends,       ZACK expected */
         ZRUB0   = 0x6c, 		/* (l) translate to rubout 0x7f */
-        ZRUB1   = 0x6d 		/* (m) translate to rubout 0xff */
+        ZRUB1   = 0x6d 		    /* (m) translate to rubout 0xff */
     }; // end ZDLECodes
 
 

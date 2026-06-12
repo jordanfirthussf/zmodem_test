@@ -770,18 +770,21 @@ void ZModemSend::saybibi() {
 } // saybibi
 
 
-void ZModemSend::zmodem_send_file(char* param) {
-  if (!fout.open(param, O_READ)) {
-    ASERIAL.println(F("file.open failed"));
+void ZModemSend::zmodem_send_file(FsFile &xxfile) {
+  if (!xxfile.isOpen()) {
+    ASERIAL.println(F("file not open"));
   } else {
+    fout = xxfile;
+    char name[PATHLEN];
+    fout.getName(name, PATHLEN);
     // Start the ZMODEM transfer
-    int Filesleft = 1;
-    int Totalleft = fout.fileSize();
+    Filesleft = 1;
+    Totalleft = fout.fileSize();
     _serial->print(F("rz\n"));
     _serial->flush();
     sendzrqinit();
     delay(200);
-    wcs(param);
+    wcs(name);
     saybibi();
     fout.close();
   }
