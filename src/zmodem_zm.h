@@ -7,9 +7,6 @@
 #include "zmodem_config.h"
 #include "zmodem.h"
 
-// moved to ZModem class:
-// void sendline(char c);
-
 extern char oneKbuf[1025];
 
 //extern int Rxtimeout;            /* Tenths of seconds to wait for something */
@@ -46,13 +43,7 @@ extern uint32_t Baudrate;
 #ifndef ARDUINO
 #define zperr(a, ... )
 #else
-/*
-#define WHERESTR "[FILE : %s, FUNC : %s, LINE : %d]: "
-#define WHEREARG __FILE__,__func__,__LINE__
-#define DEBUG(...)  {char s[256]; sprintf(s, __VA_ARGS__); DSERIAL_PRINTLN(s);}
-#define zperr(_fmt, ...) DEBUG(WHERESTR _fmt, WHEREARG,__VA_ARGS__)
-*/
-//#define zperr(...) {char s[256]; sprintf(s, __VA_ARGS__); DSERIAL_PRINTLN(s);}
+
 #define zperr(...)
 #endif
 

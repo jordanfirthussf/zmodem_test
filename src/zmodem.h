@@ -199,10 +199,10 @@ class ZModem {
 
     ZModem();
 
-    // static void begin(Stream &serial);
+    static void begin(Stream &serial);
 
 protected:
-    // static Stream *_serial;
+    static Stream *_serial;
 
     // function definitions
     static int zdlread();
@@ -229,6 +229,9 @@ protected:
     static void bttyout(int c);
     static void stohdr(long pos);
     static long rclhdr(char *hdr);
+
+protected:
+
 
 
 
@@ -296,15 +299,6 @@ void vfile();
 // #define Tx_RETRYMAX 10
 // #define Rx_RETRYMAX 5
 
-
-
-// Dylan (monte_carlo_ecm, bitflipper, etc.) - The way I made this sketch in any way operate on
-// a board with only 2K of RAM is to borrow the SZ/RZ buffer for the buffers needed by the main
-// loop(), in particular the file name parameter and the SdFat directory entry.  This is very
-// unorthodox, but now it works on an\\\ Uno.  Please see notes in zmodem_config.h for limitations
-#define file_name (&oneKbuf[512])
-#define dir ((FsFile *)&oneKbuf[256])
-#define file ((FsFile*)&oneKbuf[768])
 
 extern int Filesleft;
 extern long Totalleft;

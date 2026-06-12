@@ -1,11 +1,3 @@
-/*
- * A program for Unix to send files and commands to computers running
- *  Professional-YAM, PowerCom, YAM, IMP, or programs supporting Y/XMODEM.
- *
- *  Sz uses buffered I/O to greatly reduce CPU time compared to UMODEM.
- *
- *  USG UNIX (3.0) ioctl conventions courtesy Jeff Martin
- */
 
 int Filesleft;
 long int Totalleft;
@@ -14,13 +6,10 @@ long int Totalleft;
 #include "zmodem_zm.h"
 #include "zmodem_sz.h"
 
-
 #include "zmodem.h"
-//#include "zmodem_crc16.cpp"
 
-#include <stdio.h>
-
-Stream *ZModemSend::_serial = nullptr;
+#include <cstdio>
+ 
 
 
 #define PATHLEN 64
@@ -51,8 +40,6 @@ char Myattn[] = {
   0 };
 #endif
 #endif
-
-//FILE *in;
 
 #ifdef BADSEEK
 #define Canseek 0        /* 1: Can seek 0: only rewind -1: neither (pipe) */
@@ -115,10 +102,6 @@ extern long bytcnt;
 long Lastsync;          /* Last offset to which we got a ZRPOS */
 uint8_t Beenhereb4;         /* How many times we've been ZRPOS'd same place */
 
-// Pete (El Supremo)
-
-//void zperr();
-// #define zperr(a, ... )
 
 int sendzsinit(void);
 // void saybibi(void);
@@ -128,19 +111,9 @@ int zsendcmd(char *buf, int blen);
 
 ZModemSend::ZModemSend() = default;
 
-
-/**
- * asdf
- * @brief wildcard send (wcs) processes file paths with wildcards (e.g. * or ?)
- *    and prepare them for batch transmission
- *
- * @param
- * @return
- */
 int ZModemSend::wcs(const char *oname)
 {
 //  char name[PATHLEN];
-
 //  strcpy(name, oname);
   
   Eofseen = 0;  
@@ -154,10 +127,6 @@ int ZModemSend::wcs(const char *oname)
      return OK;
   }
 
-//  ++Filcnt;
-  // if(!Zmodem && wctx(fout.fileSize())==ERROR) {
-  //   return ERROR;
-  // }
     return ERROR;
 }
 
@@ -215,65 +184,6 @@ DSERIAL_PRINT(F("  length = ")); DSERIAL_PRINTLN(Totalleft);
   return zsendfile(txbuf, 1+strlen(p)+(p-txbuf));
 }
 
-// /**
-// * @brief ??
-//  *
-//  * @param flen The size of the file to be transmitted, in bytes.
-//  * @return OK (0) if the file is sent successfully, ERROR (-1) in case of failure,
-//  *         such as receiver cancellation or maximum retry attempts exceeded.
-//  */
-// int ZModemSend::wctx(long flen)
-// {
-//   int thisblklen;
-//   int sectnum, attempts, firstch;
-//   long charssent;
-//
-// DSERIAL_PRINTLN("\nwctx");
-//
-//   charssent = 0;
-//   firstsec=TRUE;
-//   thisblklen = blklen;
-//
-//   while ((firstch=readline(Rxtimeout))!= NAK && firstch != WANTCRC
-//     && firstch != WANTG && firstch!=TIMEOUT && firstch!= CAN)
-//     ;
-//   if (firstch== CAN) {
-//     zperr("Receiver CANcelled");
-//     return ERROR;
-//   }
-//   if (firstch==WANTCRC)
-//     Crcflg=TRUE;
-//   if (firstch==WANTG)
-//     Crcflg=TRUE;
-//   sectnum=0;
-//   for (;;) {
-//     if (flen <= (charssent + 896L))
-//       thisblklen = 128;
-//     if ( !filbuf(txbuf, thisblklen))
-//       break;
-//     if (wcputsec(txbuf, ++sectnum, thisblklen)==ERROR)
-//       return ERROR;
-//     charssent += thisblklen;
-//   }
-//   //fclose(in);
-//   fout.close();
-//   attempts=0;
-//   do {
-//     purgeline();
-//     sendline(EOT);
-//     ++attempts;
-//   }
-//   while ((firstch=(readline(Rxtimeout)) != ACK) && attempts < Tx_RETRYMAX);
-//   if (attempts == Tx_RETRYMAX) {
-//     zperr("No ACK on EOT");
-//     return ERROR;
-//   }
-//   else
-//     return OK;
-// }
-//
-//
-
 int ZModemSend::wcputsec(char *buf,int sectnum,int cseclen)
 {
   int checksum, wcj;
@@ -290,23 +200,23 @@ int ZModemSend::wcputsec(char *buf,int sectnum,int cseclen)
     fprintf(stderr, "\rSector %3d %2dk ", Totsecs, Totsecs/8 );
   for (attempts=0; attempts <= Tx_RETRYMAX; attempts++) {
     Lastrx= firstch;
-    sendline(cseclen==1024?STX:SOH);
-    sendline(sectnum);
-    sendline(-sectnum -1);
+    _serial->write(cseclen==1024?STX:SOH);
+    _serial->write(sectnum);
+    _serial->write(-sectnum -1);
     oldcrc=checksum=0;
     for (wcj=cseclen,cp=buf; --wcj>=0; ) {
-      sendline(*cp);
+      _serial->write(*cp);
       oldcrc=updcrc((0377& *cp), oldcrc);
       checksum += *cp++;
     }
     if (Crcflg) {
       oldcrc = updcrc(0, oldcrc);
       oldcrc = updcrc(0,oldcrc);
-      sendline((int)oldcrc>>8);
-      sendline((int)oldcrc);
+      _serial->write((int)oldcrc>>8);
+      _serial->write((int)oldcrc);
     }
     else
-      sendline(checksum);
+      _serial->write(checksum);
 
     if (Optiong) {
       firstsec = FALSE;
@@ -759,8 +669,8 @@ void ZModemSend::saybibi() {
     zshhdr(ZFIN, Txhdr);    /*  to make debugging easier */
     switch (zgethdr(Rxhdr, 0)) {
     case ZFIN:
-      sendline('O');
-      sendline('O');
+      _serial->write('O');
+      _serial->write('O');
       flushmo();
     case ZCAN:
     case TIMEOUT:
@@ -770,11 +680,11 @@ void ZModemSend::saybibi() {
 } // saybibi
 
 
-void ZModemSend::zmodem_send_file(FsFile &xxfile) {
-  if (!xxfile.isOpen()) {
+void ZModemSend::zmodem_send_file(FsFile &file) {
+  if (!file.isOpen()) {
     ASERIAL.println(F("file not open"));
   } else {
-    fout = xxfile;
+    fout = file;
     char name[PATHLEN];
     fout.getName(name, PATHLEN);
     // Start the ZMODEM transfer
@@ -799,16 +709,16 @@ void ZModemSend::zsbhdr(int type, char *hdr)
   vfile(F("zsbhdr: %s %lx"), frametypes[type+FTOFFSET], rclhdr(hdr));
   /*  if (type == ZDATA)
       for (n = Znulls; --n >=0; )
-        sendline(0);
+        _serial->write(0);
   */
-  sendline(ZPAD);
-  sendline(ZDLE);
+  _serial->write(ZPAD);
+  _serial->write(ZDLE);
   //Pete (El Supremo) This looks wrong but it is correct - the code fails if == is used
   if ((Crc32tx = Txfcs32)) {
     int n;
     unsigned long crc;
 
-    sendline(ZBIN32);
+    _serial->write(ZBIN32);
     zsendline(type);
     crc = 0xFFFFFFFFL;
     crc = UPDC32(type, crc);
@@ -826,7 +736,7 @@ void ZModemSend::zsbhdr(int type, char *hdr)
     int n;
     unsigned short crc=0;
 
-    sendline(ZBIN);
+    _serial->write(ZBIN);
     zsendline(type);
     crc = updcrc(type, crc);
 
@@ -843,9 +753,3 @@ void ZModemSend::zsbhdr(int type, char *hdr)
     flushmo();
 }
 
-
-void ZModemSend::begin(Stream &serial) {
-  _serial = &serial;
-
-
-}

@@ -95,10 +95,10 @@ void ZModem::zshhdr(int type,char *hdr)
   unsigned short crc=0;
 
   vfile(F("zshhdr: %s %lx"), frametypes[type+FTOFFSET], rclhdr(hdr));
-  sendline(ZModem::ZPAD);
-  sendline(ZModem::ZPAD);
-  sendline(ZModem::ZDLE);
-  sendline(ZModem::ZHEX);
+  _serial->write(ZModem::ZPAD);
+  _serial->write(ZModem::ZPAD);
+  _serial->write(ZModem::ZDLE);
+  _serial->write(ZModem::ZHEX);
   zputhex(type);
   Crc32tx = 0;
 
@@ -113,13 +113,13 @@ void ZModem::zshhdr(int type,char *hdr)
   zputhex(crc);
 
   /* Make it printable on remote machine */
-  sendline(015); 
-  sendline(0212);
+  _serial->write(015);
+  _serial->write(0212);
   /*
          * Uncork the remote in case a fake XOFF has stopped data flow
    */
   if (type != ZModem::ZFIN && type != ZModem::ZACK)
-    sendline(021);
+    _serial->write(021);
   ZModem::flushmo();
 }
 
@@ -157,13 +157,13 @@ void ZModem::zsdata(char *buf,int length,int frameend)
     for (;--length >= 0; ++buf) {
       c = *buf & 0377;
       if (c & 0140)
-        sendline(lastsent = c);
+        _serial->write(lastsent = c);
       else
         zsendline(c);
       crc = UPDC32(c, crc);
     }
-    sendline(ZModem::ZDLE);
-    sendline(frameend);
+    _serial->write(ZModem::ZDLE);
+    _serial->write(frameend);
     crc = UPDC32(frameend, crc);
   
     crc = ~crc;
@@ -180,8 +180,8 @@ void ZModem::zsdata(char *buf,int length,int frameend)
       crc = updcrc((0377 & *buf), crc);
     }
 
-    sendline(ZModem::ZDLE);
-    sendline(frameend);
+    _serial->write(ZModem::ZDLE);
+    _serial->write(frameend);
     crc = updcrc(frameend, crc);
 
     crc = updcrc(0, crc);
@@ -191,7 +191,7 @@ void ZModem::zsdata(char *buf,int length,int frameend)
     zsendline(crc);
   }
   if (frameend == ZModem::ZCRCW) {
-    sendline(ZModem::XON);
+    _serial->write(ZModem::XON);
     ZModem::flushmo();
   }
 }
@@ -328,9 +328,9 @@ startover:
   cancount = 5;
 again:
   /* Return immediate ERROR if ZCRCW sequence seen */
-  ZSERIAL.setTimeout(Rxtimeout * 100);
+  _serial->setTimeout(Rxtimeout * 100);
   c = readline(Rxtimeout);
-  ZSERIAL.setTimeout(TYPICAL_SERIAL_TIMEOUT);
+  _serial->setTimeout(TYPICAL_SERIAL_TIMEOUT);
   
   switch (c) {
   case RCDO:
@@ -503,22 +503,9 @@ void ZModem::zputhex(int c)
 
   if constexpr (Verbose>8)
     vfile(F("zputhex: %02X"), c);
-  sendline(pgm_read_byte(digits+((c&0xF0)>>4)));
-  sendline(pgm_read_byte(digits+((c)&0xF)));
+  _serial->write(pgm_read_byte(digits+((c&0xF0)>>4)));
+  _serial->write(pgm_read_byte(digits+((c)&0xF)));
 }
-
-void ZModem::sendline(char c) {
-  sendline((int) c);
-}
-
-void ZModem::sendline(int c){
-  // Check if buffer is more than half full
-  if (ZSERIAL.availableForWrite() < (SERIAL_TX_BUFFER_SIZE / 2)) {
-    ZSERIAL.flush(); // Wait for outgoing data to complete
-  }
-  ZSERIAL.write(c);
-}
-
 
 /*
  * Send character c with ZMODEM escape sequence encoding.
@@ -532,18 +519,19 @@ void ZModem::zsendline(int c)
 {
   /* check for non-control characters */
   if (c & 0140)
-    sendline(lastsent = c);
+    // sendline(lastsent = c);
+    _serial->write(lastsent = c);
 
   else {
     switch (c &= 0377) {
     case ZModem::ZDLE:
-      sendline(ZModem::ZDLE);
-      sendline (lastsent = (c ^= 0100));
+      _serial->write(ZModem::ZDLE);
+      _serial->write(lastsent = (c ^= 0100));
       break;
     case 015: // CR
     case 0215: //
       if (!Zctlesc && (lastsent & 0177) != '@') {
-        sendline(lastsent = c);
+        _serial->write(lastsent = c);
       }
         break;
 
@@ -554,18 +542,18 @@ void ZModem::zsendline(int c)
     case 0220: // hex 8D
     case 0221: // '
     case 0223: // "
-      sendline(ZModem::ZDLE);
+      _serial->write(ZModem::ZDLE);
       c ^= 0100;
 // sendit:
-      sendline(lastsent = c);
+      _serial->write(lastsent = c);
       break;
 
     default:
       if (Zctlesc && ! (c & 0140)) {
-        sendline(ZModem::ZDLE);
+        _serial->write(ZModem::ZDLE);
         c ^= 0100;
       }
-      sendline(lastsent = c);
+      _serial->write(lastsent = c);
     }
   }
 }
@@ -729,7 +717,7 @@ void ZModem::bttyout(int c)
 
 void ZModem::flushmo(void)
 {
-  ZSERIAL.flush();
+  _serial->flush();
 }
 
 
@@ -738,13 +726,13 @@ int ZModem::readline(int timeout) {
   unsigned char c;
 
   then = millis();
-  while(ZSERIAL.available() < 1) {
+  while(_serial->available() < 1) {
     if(millis() - then > (unsigned int)timeout*10UL) {
       //DSERIAL.println("");
       return(TIMEOUT);
     }
   }
-  c = ZSERIAL.read();
+  c = _serial->read();
   //DSERIAL.write(c);
   //DSERIAL.print(" ");
   return(c);

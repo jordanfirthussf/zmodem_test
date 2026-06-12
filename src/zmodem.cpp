@@ -6,3 +6,9 @@
 
 #include "zmodem_config.h"
 
+Stream* ZModem::_serial = nullptr;
+
+void ZModem::begin(Stream &serial) {
+  _serial = &serial;
+}
+
