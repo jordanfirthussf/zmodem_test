@@ -199,7 +199,7 @@ class ZModem {
 
     ZModem();
 
-    static void begin(Stream &serial);
+    // static void begin(Stream &serial);
 
 protected:
     // static Stream *_serial;
@@ -212,32 +212,15 @@ protected:
 
     static int noxrd7();
 
-    // static int wcs(const char *oname);
-   // static int wctxpn(const char *name);
 
-
-    // receive-side helpers
-    static int wcreceive(int argc, char **argp);
-    static int wcrxpn(char *rpn);
-    static int wcrx();
-    static int wcgetsec(char *rxbuf, int maxtime);
-    static int procheader(const char *name);
-    static void canit();
-    static void purgeline();
-    static int rzfiles();
-    static int rzfile();
-
-    // belong in RZ
-    static void ackbibi();
-
+    // static void purgeline();
 
     // protocol primitives
     static void zshhdr(int type, char *hdr);
     static void zsdata(char *buf, int length, int frameend);
     static int zrdata(char *buf, int length);
     static int zgethdr(char *hdr, int eflag);
-    static int zrbhdr(char *hdr);
-    static int zrbhdr32(char *hdr);
+
     static int zrhhdr(char *hdr);
     static void zputhex(int c);
     static void zsendline(int c); static void zsendline(char c);

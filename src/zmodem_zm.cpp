@@ -398,14 +398,16 @@ splat:
   case TIMEOUT:
     goto fifi;
   case ZModem::ZBIN:
-    Rxframeind = ZModem::ZBIN;
-    Crc32rx = FALSE;
-    c =  zrbhdr(hdr);
-    break;
+    return(ERROR);
+    // Rxframeind = ZModem::ZBIN;
+    // Crc32rx = FALSE;
+    // c =  zrbhdr(hdr);
+    // break;
   case ZModem::ZBIN32:
-    Crc32rx = Rxframeind = ZModem::ZBIN32;
-    c =  zrbhdr32(hdr);
-    break;
+    return(ERROR);
+    // Crc32rx = Rxframeind = ZModem::ZBIN32;
+    // c =  zrbhdr32(hdr);
+    // break;
   case ZModem::ZHEX:
     Rxframeind = ZModem::ZHEX;
     Crc32rx = FALSE;
@@ -444,86 +446,6 @@ break;
 }
 
 //#endif
-
-/* Receive a binary style header (type and position) */
-int ZModem::zrbhdr(char *hdr)
-{
-  int c, n;
-  unsigned short crc=0;
-
-  if ((c = zdlread()) & ~0377)
-    return c;
-  Rxtype = c;
-  crc = updcrc(c, crc);
-
-  for (n=4; --n >= 0; ++hdr) {
-    if ((c = zdlread()) & ~0377)
-      return c;
-    crc = updcrc(c, crc);
-    *hdr = c;
-  }
-  if ((c = zdlread()) & ~0377)
-    return c;
-  crc = updcrc(c, crc);
-  if ((c = zdlread()) & ~0377)
-    return c;
-  crc = updcrc(c, crc);
-  if (crc & 0xFFFF) {        
-    zperr(badcrc);
-    return ERROR;
-  }
-#ifdef ZMODEM
-  Protocol = ZMODEM;
-#endif
-//  Zmodem = 1;
-  return Rxtype;
-}
-
-
-
-/* Receive a binary style header (type and position) with 32 bit FCS */
-int ZModem::zrbhdr32(char *hdr)
-{
-  int c, n;
-  unsigned long crc;
-
-  if ((c = zdlread()) & ~0377)
-    return c;
-  Rxtype = c;
-  crc = 0xFFFFFFFFL; 
-  crc = UPDC32(c, crc);
-#ifdef DEBUGZ
-  vfile(F("zrbhdr32 c=%X  crc=%lX"), c, crc);
-#endif
-
-  for (n=4; --n >= 0; ++hdr) {
-    if ((c = zdlread()) & ~0377)
-      return c;
-    crc = UPDC32(c, crc);
-    *hdr = c;
-#ifdef DEBUGZ
-    vfile(F("zrbhdr32 c=%X  crc=%lX"), c, crc);
-#endif
-  }
-  for (n=4; --n >= 0;) {
-    if ((c = zdlread()) & ~0377)
-      return c;
-    crc = UPDC32(c, crc);
-#ifdef DEBUGZ
-    vfile(F("zrbhdr32 c=%X  crc=%lX"), c, crc);
-#endif
-  }
-  if (crc != 0xDEBB20E3) {
-    zperr(badcrc);
-    return ERROR;
-  }
-#ifdef ZMODEM
-  Protocol = ZMODEM;
-#endif
-//  Zmodem = 1;
-  return Rxtype;
-}
-
 
 
 
@@ -793,13 +715,6 @@ long ZModem::rclhdr(char *hdr)
 #endif
 
 
-/*
- * Purge the modem input queue of all characters
- */
-void ZModem::purgeline(void)
-{
-  while(ZSERIAL.available())ZSERIAL.read();
-}
 
 /*
  * Local console output simulation
@@ -817,18 +732,6 @@ void ZModem::flushmo(void)
   ZSERIAL.flush();
 }
 
-
-/* send cancel string to get the other end to shut up */
-void ZModem::canit(void)
-{
-  for (int i=0; i < 10; ++i) {
-    ZSERIAL.write(24);
-  }
-  for (int i=0; i < 10; ++i) {
-    ZSERIAL.write(8);
-  }
-  ZSERIAL.flush();
-}
 
 int ZModem::readline(int timeout) {
   long then;
