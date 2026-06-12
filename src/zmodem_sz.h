@@ -23,6 +23,8 @@ private:
     static void zsbhdr(int type, char *hdr);
     static int wcputsec(char *buf, int sectnum, int cseclen);
 
+    static FsFile *_fout;
+
 
     // not implemented
     // static int sendzsinit(void);
@@ -37,4 +39,4 @@ protected:
 extern int Filesleft;
 extern long Totalleft;
 
-extern FsFile fout;
+// extern FsFile fout;

@@ -302,7 +302,7 @@ void vfile();
 
 extern int Filesleft;
 extern long Totalleft;
-extern FsFile fout;
+// extern FsFile fout;
 
 
 #ifdef NFGM

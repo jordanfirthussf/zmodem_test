@@ -6,7 +6,7 @@
 #include <SdFat.h>
 
 SdFs sd;
-FsFile fout;
+// FsFile fout;
 
 #include <SPI.h>
 
@@ -66,9 +66,9 @@ void setup() {
   delay(5000);
 
   char cmd[14] = "flightA.csv";
-  fout = sd.open(cmd, O_READ);
+  FsFile file = sd.open(cmd, O_READ);
 
-  ZModemSend::zmodem_send_file(fout);
+  ZModemSend::zmodem_send_file(file);
 }
 
 void loop() {

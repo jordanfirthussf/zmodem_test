@@ -10,6 +10,8 @@ long int Totalleft;
 
 #include <cstdio>
  
+FsFile *ZModemSend::_fout = nullptr;
+ 
 
 
 #define PATHLEN 64
@@ -162,7 +164,7 @@ int ZModemSend::wctxpn(const char *name)
     // q = q + strlen(q);
     // ultoa(Totalleft, q, 10);
 
-  Totalleft -= fout.fileSize();
+  Totalleft -= _fout->fileSize();
 
 DSERIAL_PRINT(F("  length = ")); DSERIAL_PRINTLN(Totalleft);
 
@@ -176,8 +178,8 @@ DSERIAL_PRINT(F("  length = ")); DSERIAL_PRINTLN(Totalleft);
     blklen = TXBSIZE;
   else {          /* A little goodie for IMP/KMD */
     blklen = 128;
-    txbuf[127] = (fout.fileSize() + 127) >>7;
-    txbuf[126] = (fout.fileSize() + 127) >>15;
+    txbuf[127] = (_fout->fileSize() + 127) >>7;
+    txbuf[126] = (_fout->fileSize() + 127) >>15;
   }
 
 
@@ -277,7 +279,7 @@ DSERIAL_PRINTLN("\nfilbuf");
 
   if ( !Ascii) {
 //    m = read(fileno(in), buf, count);
-    m = fout.read(buf, count);
+    m = _fout->read(buf, count);
 DSERIAL_PRINTLN(F("filbuf: '"));
 //for(int i=0;i<m;i++) {
 //  DSERIAL_PRINT(buf[i]);
@@ -296,7 +298,7 @@ DSERIAL_PRINTLN(F("'"));
     Lfseen = 0;
   }
 //  while ((c=getc(in))!=EOF) {
-  while((c = fout.read()) != -1) {
+  while((c = _fout->read()) != -1) {
     if (c == 012) {
       *buf++ = 015;
       if (--m == 0) {
@@ -323,7 +325,7 @@ int ZModemSend::zfilbuf(void)
 
 // This code works:
 //  n = fread(txbuf, 1, blklen, in);
-  n = fout.read(txbuf,blklen);
+  n = _fout->read(txbuf,blklen);
 
   if (n < blklen)
     Eofseen = 1;
@@ -371,20 +373,20 @@ DSERIAL_PRINTLN(F("\nzsendfile - ZFIN"));
     case ZCRC:
       crc = 0xFFFFFFFFL;
       if (Canseek >= 0) {
-        fout.seekSet(0);
-        while (((c = fout.read()) != -1)) // && --Rxpos)
+        _fout->seekSet(0);
+        while (((c = _fout->read()) != -1)) // && --Rxpos)
           crc = UPDC32(c, crc);
         crc = ~crc;
 //        clearerr(in);   /* Clear EOF */
 //>>> Need to implement the seek
 //        fseek(in, 0L, 0);
-          fout.seekSet(0);
+          _fout->seekSet(0);
       }
       stohdr(crc);
       zsbhdr(ZCRC, Txhdr);
       goto again;
     case ZSKIP:
-      fout.close();
+      _fout->close();
       //fclose(in);
 DSERIAL_PRINTLN(F("\nzsendfile - ZSKIP"));
       return c;
@@ -395,7 +397,7 @@ DSERIAL_PRINTLN(F("\nzsendfile - ZSKIP"));
        */
 //>>> Need to implement the seek
 //      if (Rxpos && fseek(in, Rxpos, 0))
-      if(Rxpos && !fout.seekSet(Rxpos))
+      if(Rxpos && !_fout->seekSet(Rxpos))
         return ERROR;
       Lastsync = (bytcnt = Txpos = Rxpos) -1;
       int ret = zsendfdata();
@@ -434,12 +436,12 @@ gotack:
     switch (c) {
     default:
     case ZCAN:
-      fout.close();
+      _fout->close();
       //fclose(in);
 DSERIAL_PRINTLN(F("zsendfdata - error - 1"));
       return ERROR;
     case ZSKIP:
-      fout.close();
+      _fout->close();
       //fclose(in);
       return c;
     case ZACK:
@@ -565,12 +567,12 @@ DSERIAL_PRINTLN(F("zsendfdata - ZRPOS"));
 DSERIAL_PRINTLN(F("zsendfdata - OK"));
       return OK;
     case ZSKIP:
-      fout.close();
+      _fout->close();
       //fclose(in);
 DSERIAL_PRINTLN(F("zsendfdata - ZSKIP"));
       return c;
     default:
-      fout.close();
+      _fout->close();
       //fclose(in);
 DSERIAL_PRINTLN(F("zsendfdata - error - 2"));
       return ERROR;
@@ -611,7 +613,7 @@ DSERIAL_PRINTLN(F("getinsync - timeout"));
 //      clearerr(in);   /* In case file EOF seen */
 //      if (fseek(in, Rxpos, 0)) {
       // seekSet returns true on success
-      if(!fout.seekSet(Rxpos)) {
+      if(!_fout->seekSet(Rxpos)) {
 DSERIAL_PRINTLN(F("getinsync - fseek"));
         return ERROR;
       }
@@ -631,7 +633,7 @@ DSERIAL_PRINTLN(F("getinsync - fseek"));
       continue;
     case ZRINIT:
     case ZSKIP:
-      fout.close();      
+      _fout->close();      
       //fclose(in);
       return c;
     case ERROR:
@@ -684,19 +686,19 @@ void ZModemSend::zmodem_send_file(FsFile &file) {
   if (!file.isOpen()) {
     ASERIAL.println(F("file not open"));
   } else {
-    fout = file;
+    _fout = &file;
     char name[PATHLEN];
-    fout.getName(name, PATHLEN);
+    _fout->getName(name, PATHLEN);
     // Start the ZMODEM transfer
     Filesleft = 1;
-    Totalleft = fout.fileSize();
+    Totalleft = _fout->fileSize();
     _serial->print(F("rz\n"));
     _serial->flush();
     sendzrqinit();
     delay(200);
     wcs(name);
     saybibi();
-    fout.close();
+    _fout->close();
   }
 }
 
