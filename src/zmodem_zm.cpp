@@ -105,7 +105,7 @@ void ZModem::zshhdr(int type,char *hdr)
   crc = updcrc(type, crc);
   for (n=4; --n >= 0; ++hdr) {
     zputhex(*hdr); 
-    crc = updcrc((0377 & *hdr), crc);
+    crc = updcrc((255 & *hdr), crc);
   }
   crc = updcrc(0,crc);
   crc = updcrc(0,crc);
@@ -168,16 +168,15 @@ void ZModem::zsdata(char *buf,int length,int frameend)
   
     crc = ~crc;
     for (length=4; --length >= 0;) {
-      zsendline((int)crc);  
+      zsendchar((int)crc);
       crc >>= 8;
     }
   } else {
-    // Serial.print("not crc32 "); delay(5); // good
-    unsigned short crc = 0;
+      unsigned short crc = 0;
     for (;--length >= 0; ++buf) {
-      zsendline(*buf);
+      zsendchar(*buf);
 
-      crc = updcrc((0377 & *buf), crc);
+      crc = updcrc((255 & *buf), crc);
     }
 
     _serial->write(ZModem::ZDLE);
@@ -187,8 +186,8 @@ void ZModem::zsdata(char *buf,int length,int frameend)
     crc = updcrc(0, crc);
     crc = updcrc(0, crc);
 
-    zsendline(crc>>8); 
-    zsendline(crc);
+    zsendchar(crc>>8);
+    zsendchar(crc);
   }
   if (frameend == ZModem::ZCRCW) {
     _serial->write(ZModem::XON);
@@ -214,7 +213,7 @@ int ZModem::zrdata(char *buf,int length)
     Rxcount = 0;  
     end = buf + length;
     while (buf <= end) {
-      if ((c = zdlread()) & ~0377) {
+      if ((c = zdlread()) & ~255) {
   crcfoo32:
         switch (c) {
         case ZModem::GOTCRCE:
@@ -222,18 +221,18 @@ int ZModem::zrdata(char *buf,int length)
         case ZModem::GOTCRCQ:
         case ZModem::GOTCRCW:
           d = c;  
-          c &= 0377;
+          c &= 255;
           crc = UPDC32(c, crc);
-          if ((c = zdlread()) & ~0377)
+          if ((c = zdlread()) & ~255)
             goto crcfoo32;
           crc = UPDC32(c, crc);
-          if ((c = zdlread()) & ~0377)
+          if ((c = zdlread()) & ~255)
             goto crcfoo32;
           crc = UPDC32(c, crc);
-          if ((c = zdlread()) & ~0377)
+          if ((c = zdlread()) & ~255)
             goto crcfoo32;
           crc = UPDC32(c, crc);
-          if ((c = zdlread()) & ~0377)
+          if ((c = zdlread()) & ~255)
             goto crcfoo32;
           crc = UPDC32(c, crc);
           if (crc != 0xDEBB20E3) {
@@ -266,18 +265,18 @@ int ZModem::zrdata(char *buf,int length)
     crc = Rxcount = 0;  
     end = buf + length;
     while (buf <= end) {
-      if ((c = zdlread()) & ~0377) {
+      if ((c = zdlread()) & ~255) {
   crcfoo16:
         switch (c) {
         case ZModem::GOTCRCE:
         case ZModem::GOTCRCG:
         case ZModem::GOTCRCQ:
         case ZModem::GOTCRCW:
-          crc = updcrc((d=c)&0377, crc);
-          if ((c = zdlread()) & ~0377)
+          crc = updcrc((d=c)&255, crc);
+          if ((c = zdlread()) & ~255)
             goto crcfoo16;
           crc = updcrc(c, crc);
-          if ((c = zdlread()) & ~0377)
+          if ((c = zdlread()) & ~255)
             goto crcfoo16;
           crc = updcrc(c, crc);
           if (crc & 0xFFFF) {
@@ -418,10 +417,10 @@ splat:
   default:
     goto agn2;
   }
-  Rxpos = hdr[ZP3] & 0377;
-  Rxpos = (Rxpos<<8) + (hdr[ZP2] & 0377);
-  Rxpos = (Rxpos<<8) + (hdr[ZP1] & 0377);
-  Rxpos = (Rxpos<<8) + (hdr[ZP0] & 0377);
+  Rxpos = hdr[ZP3] & 255;
+  Rxpos = (Rxpos<<8) + (hdr[ZP2] & 255);
+  Rxpos = (Rxpos<<8) + (hdr[ZP1] & 255);
+  Rxpos = (Rxpos<<8) + (hdr[ZP0] & 255);
 fifi:
 
   switch (c) {
@@ -511,18 +510,19 @@ void ZModem::zputhex(int c)
  * Send character c with ZMODEM escape sequence encoding.
  *  Escape XON, XOFF. Escape CR following @ (Telenet net escape)
  */
-void ZModem::zsendline(char c) {
-  zsendline((int)c);
+void ZModem::zsendchar(char c) {
+  zsendchar(c & 255); // turn into int
 }
 
-void ZModem::zsendline(int c)
+void ZModem::zsendchar(int c)
 {
   /* check for non-control characters */
-  if (c & 0140)
+
+  if (c & 96) // (c >= 0x60; control codes are all lower than this)
     _serial->write(lastsent = c);
 
   else {
-    switch (c &= 0377) {
+    switch (c &= 255) {
     case ZModem::ZDLE:
       _serial->write(ZModem::ZDLE);
       _serial->write(lastsent = (c ^= 0100));
@@ -630,7 +630,7 @@ again2:
   case ZModem::ZRUB0:
     return 0177;
   case ZModem::ZRUB1:
-    return 0377;
+    return 255;
   case 023:
   case 0223:
   case 021:
@@ -693,10 +693,10 @@ long ZModem::rclhdr(char *hdr)
 {
   long l;
 
-  l = (hdr[ZP3] & 0377);
-  l = (l << 8) | (hdr[ZP2] & 0377);
-  l = (l << 8) | (hdr[ZP1] & 0377);
-  l = (l << 8) | (hdr[ZP0] & 0377);
+  l = (hdr[ZP3] & 255);
+  l = (l << 8) | (hdr[ZP2] & 255);
+  l = (l << 8) | (hdr[ZP1] & 255);
+  l = (l << 8) | (hdr[ZP0] & 255);
   return l;
 }
 #endif

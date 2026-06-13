@@ -104,22 +104,13 @@ extern long bytcnt;
 long Lastsync;          /* Last offset to which we got a ZRPOS */
 uint8_t Beenhereb4;         /* How many times we've been ZRPOS'd same place */
 
-
-int sendzsinit(void);
-// void saybibi(void);
-//void ZModem::bttyout(int c);
-int zsendcmd(char *buf, int blen);
-
-
 ZModemSend::ZModemSend() = default;
 
 int ZModemSend::wcs(const char *oname)
 {
-//  char name[PATHLEN];
-//  strcpy(name, oname);
+
   
-  Eofseen = 0;  
-//  vpos = 0;
+  Eofseen = 0;
   switch (wctxpn(oname)) {
    case ERROR:
     DSERIAL_PRINT("error");
@@ -143,26 +134,16 @@ int ZModemSend::wcs(const char *oname)
 int ZModemSend::wctxpn(const char *name)
 {
 
+  // *p points to beginning of txbuf?
+  // *q points to end of txbuf
   char *p, *q;
 
   strcpy(txbuf,name);
   p = q = txbuf + strlen(txbuf)+1;
-  //Pete (El Supremo) fix bug - was 1024, should be TXBSIZE??
   while (q < (txbuf + TXBSIZE)) {
+    // set all of txbuf to '0'
     *q++ = 0;
   }
-//  if (!Ascii && (in!=stdin) && *name && fstat(fileno(in), &f)!= -1)
-  // if (!Ascii)
-    // I will have to figure out how to convert the uSD date/time format to a UNIX epoch
-    // sprintf(p, "%lu %lo %o 0 %d %ld", fout.fileSize(), 0L,0600, Filesleft, Totalleft);
-// Avoid sprintf to save memory for small boards.  This sketch doesn't know what time it is anyway
-    // ultoa(fout.fileSize(), p, 10);
-    // strcat_P(p, PSTR(" 0 0 0 "));
-    // q = p + strlen(p);
-    // ultoa(Filesleft, q, 10);
-    // strcat_P(q, PSTR(" "));
-    // q = q + strlen(q);
-    // ultoa(Totalleft, q, 10);
 
   Totalleft -= _fout->fileSize();
 
@@ -208,7 +189,7 @@ int ZModemSend::wcputsec(char *buf,int sectnum,int cseclen)
     oldcrc=checksum=0;
     for (wcj=cseclen,cp=buf; --wcj>=0; ) {
       _serial->write(*cp);
-      oldcrc=updcrc((0377& *cp), oldcrc);
+      oldcrc=updcrc((255& *cp), oldcrc);
       checksum += *cp++;
     }
     if (Crcflg) {
@@ -721,17 +702,17 @@ void ZModemSend::zsbhdr(int type, char *hdr)
     unsigned long crc;
 
     _serial->write(ZBIN32);
-    zsendline(type);
+    zsendchar(type);
     crc = 0xFFFFFFFFL;
     crc = UPDC32(type, crc);
 
     for (n=4; --n >= 0; ++hdr) {
-      crc = UPDC32((0377 & *hdr), crc);
-      zsendline(*hdr);
+      crc = UPDC32((255 & *hdr), crc);
+      zsendchar(*hdr);
     }
     crc = ~crc;
     for (n=4; --n >= 0;) {
-      zsendline((int)crc);
+      zsendchar((int)crc);
       crc >>= 8;
     }
   } else {
@@ -739,17 +720,17 @@ void ZModemSend::zsbhdr(int type, char *hdr)
     unsigned short crc=0;
 
     _serial->write(ZBIN);
-    zsendline(type);
+    zsendchar(type);
     crc = updcrc(type, crc);
 
     for (n=4; --n >= 0; ++hdr) {
-      zsendline(*hdr);
-      crc = updcrc((0377& *hdr), crc);
+      zsendchar(*hdr);
+      crc = updcrc((255& *hdr), crc);
     }
     crc = updcrc(0,crc);
     crc = updcrc(0,crc);
-    zsendline(crc>>8);
-    zsendline(crc);
+    zsendchar(crc>>8);
+    zsendchar(crc);
   }
   if (type != ZDATA)
     _serial->flush();
