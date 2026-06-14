@@ -1,15 +1,4 @@
-// See this page for all code: http://www.raspberryginger.com/jbailey/minix/html/dir_acf1a49c3b8ff2cb9205e4a19757c0d6.html
-// From: http://www.raspberryginger.com/jbailey/minix/html/zm_8c-source.html
-// docs at: http://www.raspberryginger.com/jbailey/minix/html/zm_8c.html
-
-// Look at all the files:
-// http://www.raspberryginger.com/jbailey/minix/html/files.html
-
-#ifndef ZMODEM_ZM_CPP
-#define ZMODEM_ZM_CPP
-
 /*
- *   Z M . C
  *    ZMODEM protocol primitives
  *    05-09-88  Chuck Forsberg Omen Technology Inc
  *
@@ -144,59 +133,47 @@ static char *Zendnames[] = {
 };
 */
 
-void ZModem::zsdata(char *buf,int length,int frameend)
-{
+/**
+ *  Sends a ZModem data sub-packet with CRC.
+ */
+void ZModem::sendData(char *buf,int length,int frameend) {
 
-  // vfile(F("zsdata: %d %s"), length, Zendnames[(frameend-ZCRCE)&3]);
+    ZMCRC32 crc32;
+    crc32.begin(0xFFFFFFFF);
+
+    static ZMCRC16 crc16;
+    crc16.begin(0);            // initialize to 0
+
+  // send all characters in buf
+    for (;--length >= 0; ++buf) {
+      zsendchar(*buf);
+      if (Crc32tx) {
+        crc32.update(*buf & 255);
+      }
+      else {
+        crc16.update(*buf & 255);
+      }
+    } // end for (send all characters in buf)
+    _serial->write(ZModem::ZDLE);
+    _serial->write(frameend);
+
 
   if (Crc32tx) {
-    int c;
-    unsigned long crc;
-  
-    crc = 0xFFFFFFFFL;
-    // crc32 = 0xFFFFFFFFL;
-
-    for (;--length >= 0; ++buf) {
-      // c = *buf & 255; // turns char* into int
-      zsendchar(*buf);
-      crc = UPDC32(*buf & 255, crc);
-      // UpdateCRC32(*buf & 255);
-    }
-    _serial->write(ZModem::ZDLE);
-    _serial->write(frameend);
-    crc = UPDC32(frameend, crc);
-
-    // UpdateCRC32(frameend & 255);
-  
-    crc = ~crc;
+    crc32.update(frameend);
+    crc32.invert();
     for (length=4; --length >= 0;) {
-      zsendchar((int)crc);
-      crc >>= 8;
+      zsendchar((uint8_t)crc32.get());
+      crc32.rightshift(8);
     }
-  } else {
-      ZMCRC16 crc16;
-      crc16.begin();
-      unsigned short crc = 0;
-    for (;--length >= 0; ++buf) {
-      zsendchar(*buf);
-
-      crc = updcrc((255 & *buf), crc);
-      crc16.update(*buf & 255);
-    }
-
-    _serial->write(ZModem::ZDLE);
-    _serial->write(frameend);
-    crc = updcrc(frameend, crc);
-    crc16.update(frameend);
-
-    crc = updcrc(0, crc);
-    crc = updcrc(0, crc);
-    crc16.update(0);
-    crc16.update(0);
-
-    zsendchar(crc16.get()>>8);
-    zsendchar(crc16.get());
   }
+  else {                        // (16 bit CRC)
+      crc16.update(frameend);
+      crc16.update(0);
+      crc16.update(0);
+      zsendchar(crc16.get()>>8);
+      zsendchar(crc16.get());
+    }
+
   if (frameend == ZModem::ZCRCW) {
     _serial->write(ZModem::XON);
     _serial->flush();
@@ -746,24 +723,30 @@ int ZModem::readline(int timeout) {
 
 
 
+// definitions for CRC16 functions
+uint16_t ZMCRC16::crc;
+void ZMCRC16::begin() {crc = (uint16_t) 0; }
+void ZMCRC16::begin(uint16_t value) {crc = value; }
+void ZMCRC16::update(uint8_t cp) {
+  crc = (crctab[((crc >> 8) & 255)] ^ (crc << 8)) ^ cp;
+}
+uint16_t ZMCRC16::get() {return crc;}
 
-    /* crctab calculated by Mark G. Mendel, Network Systems Corporation */
-    uint16_t ZMCRC16::crc16;
+// definitions for CRC32 functions
+uint32_t ZMCRC32::crc;
+void ZMCRC32::begin() {crc = (uint32_t) 0; }
+void ZMCRC32::begin(uint32_t value) {crc = value; }
+void ZMCRC32::update(uint8_t cp) {
+  crc = crctab[(crc^cp) & 0xff] ^ ((crc >> 8) & 0x00FFFFFF);
+}
+void ZMCRC32::invert() {
+  crc = ~crc;
+}
 
-    void ZMCRC16::begin() {crc16 = 0;}
-    void ZMCRC16::begin(uint16_t value) {crc16 = value; }
-
-    void ZMCRC16::update(uint8_t cp) {
-        crc16 = (crctab2[((crc16 >> 8) & 255)] ^ (crc16 << 8)) ^ cp;
-    }
-
-  uint16_t ZMCRC16::get() {return crc16;}
-
-
-
-#endif
-
-
-
+void ZMCRC32::rightshift(uint shift) {
+  // Perform the right shift on the internal value
+  crc >>= shift;
+}
+uint32_t ZMCRC32::get() {return crc;}
 
 

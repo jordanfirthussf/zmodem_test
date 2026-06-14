@@ -106,16 +106,20 @@ uint8_t Beenhereb4;         /* How many times we've been ZRPOS'd same place */
 
 ZModemSend::ZModemSend() = default;
 
+/// @brief Initiates the transfer of a specific named file.
+/// @param oname
+/// @return 0 (OK)
+/// @return -1 (ERROR)
 int ZModemSend::wcs(const char *oname)
 {
 
-  
   Eofseen = 0;
   switch (wctxpn(oname)) {
    case ERROR:
     DSERIAL_PRINT("error");
      return ERROR;
-   case ZSKIP:
+    case OK:
+    case ZSKIP:
     DSERIAL_PRINT("ok");
      return OK;
   }
@@ -124,15 +128,15 @@ int ZModemSend::wcs(const char *oname)
 }
 
 
-/*
+/* @brief  Sends the file name and metadata (size, time, etc.) to the receiver.
+ * @param name
  * generate and transmit pathname block consisting of
  *  pathname (null terminated),
  *  file length, mode time and file mode in octal
  *  as provided by the Unix fstat call.
  *  N.B.: modifies the passed name, may extend it!
  */
-int ZModemSend::wctxpn(const char *name)
-{
+int ZModemSend::wctxpn(const char *name) {
 
   // *p points to beginning of txbuf?
   // *q points to end of txbuf
@@ -164,7 +168,7 @@ DSERIAL_PRINT(F("  length = ")); DSERIAL_PRINTLN(Totalleft);
   }
 
 
-  return zsendfile(txbuf, 1+strlen(p)+(p-txbuf));
+  return sendZFILE(txbuf, 1+strlen(p)+(p-txbuf));
 }
 
 int ZModemSend::wcputsec(char *buf,int sectnum,int cseclen)
@@ -315,8 +319,57 @@ int ZModemSend::zfilbuf(void)
 
 
 
-/* Send file name and related info */
-int ZModemSend::zsendfile(char *buf, int blen)
+/* Send a ZFILE frame
+ * https://github.com/TeraTermProject/teraterm/wiki/ZMODEM-Protocol#zfile0x04
+ #### ZFILE(0x04)
+
+- Binary/Hex Header
+- Sender→Receiver
+
+| offset   | length   | means               | remark                                     |
+| -------- | -------- | ------------------- | ------------------------------------------ |
+| 0        | 1        | ZPAD (0x2A, "*")    |                                            |
+| 1        | 1        | ZDLE (0x18)         |                                            |
+| 2        | 1        | ZBIN (0x41, "A")    | Bin Header                                 |
+| 3        | 1        | ZFILE (0x04)        |                                            |
+| 4        | 1        | ZF3(0x??)           |                                            |
+| 5        | 1        | ZF2(0x??)           |                                            |
+| 6        | 1        | ZF1(0x??)           |                                            |
+| 7        | 1        | ZF0(0x??)           |                                            |
+| 8        | 2        | 16bit CRC           | 4byte = 16bit                              |
+| -------- | -------- | ------------------- | ------------------------------------------ |
+| 10       | ?        | PATHNAME            | UTF-8?                                     |
+| ?        | ?        | 0x00                |                                            |
+| ?        | ?        | LENGTH              | "[0-9]+" %lu                               |
+| ?        | ?        | 0x20, " "           |                                            |
+| ?        | ?        | MODIFICATION DATE   | "[0-7]+" %lo (seconds from 1970/1/1 UTC)   |
+| ?        | ?        | 0x20, " "           |                                            |
+| ?        | ?        | FILE MODE           | "[0-7]+" %lo (UNIX由来)                    |
+| ?        | ?        | 0x00                | terminator                                 |
+
+- MODIFICATION DATE and FILE MODE is option
+
+flags (ZF0...ZF3)
+
+| flag byte | byte/bit | means                                  |
+| --------- | -------- | -------------------------------------- |
+| ZF0       | 0x01     | ZCBIN (Tera Term : only 1)             |
+| ZF0       | 0x02     | ZCNL                                   |
+| ZF0       | 0x04     | ZCRECOV (Not implimented in Tera Term) |
+| ZF1       | 0x01     | ZMNEWL  (Not implimented in Tera Term) |
+| ZF1       | 0x02     | ZMCRC   (Not implimented in Tera Term) |
+| ZF1       | 0x04     | ZMAPND  (Not implimented in Tera Term) |
+| ZF1       | 0x08     | ZMCLOB  (Not implimented in Tera Term) |
+| ZF1       | 0x10     | ZMDIFF  (Not implimented in Tera Term) |
+| ZF1       | 0x20     | ZMPROT  (Not implimented in Tera Term) |
+| ZF1       | 0x40     | ZMNEW   (Not implimented in Tera Term) |
+| ZF2       | 0x01     | ZTLZW   (Not implimented in Tera Term) |
+| ZF2       | 0x02     | ZTCRYPT (Not implimented in Tera Term) |
+| ZF2       | 0x04     | ZTRLE   (Not implimented in Tera Term) |
+| ZF3       | 0x01     | ZTSPARS (Not implimented in Tera Term) |
+ *
+ */
+int ZModemSend::sendZFILE(char *buf, int blen)
 {
   int c;
   unsigned long crc;
@@ -332,7 +385,7 @@ DSERIAL_PRINTLN(F("\nzsendfile"));
     Txhdr[ZF2] = Lztrans;   /* file transport request */
     Txhdr[ZF3] = 0; // should be 0 !!
     zsbhdr(ZFILE, Txhdr);
-    zsdata(buf, blen, ZCRCW);
+    sendData(buf, blen, ZCRCW);
 again:
     c = zgethdr(Rxhdr, 1);
     switch (c) {
@@ -352,23 +405,21 @@ DSERIAL_PRINTLN(F("\nzsendfile - ZFIN"));
 
       return ERROR;
     case ZCRC:
-      crc = 0xFFFFFFFFL;
+      ZMCRC32 crc32;
+      crc32.begin(0xFFFFFFFF);
       if (Canseek >= 0) {
         _fout->seekSet(0);
         while (((c = _fout->read()) != -1)) // && --Rxpos)
-          crc = UPDC32(c, crc);
-        crc = ~crc;
-//        clearerr(in);   /* Clear EOF */
-//>>> Need to implement the seek
-//        fseek(in, 0L, 0);
+          crc32.update(c);
+        crc32.invert();
+
           _fout->seekSet(0);
       }
-      stohdr(crc);
+      stohdr(crc32.get());
       zsbhdr(ZCRC, Txhdr);
       goto again;
     case ZSKIP:
       _fout->close();
-      //fclose(in);
 DSERIAL_PRINTLN(F("\nzsendfile - ZSKIP"));
       return c;
     case ZRPOS:
@@ -376,12 +427,11 @@ DSERIAL_PRINTLN(F("\nzsendfile - ZSKIP"));
        * Suppress zcrcw request otherwise triggered by
        * lastyunc==bytcnt
        */
-//>>> Need to implement the seek
-//      if (Rxpos && fseek(in, Rxpos, 0))
+
       if(Rxpos && !_fout->seekSet(Rxpos))
         return ERROR;
       Lastsync = (bytcnt = Txpos = Rxpos) -1;
-      int ret = zsendfdata();
+      int ret = sendFileData();
 DSERIAL_PRINT(F("\nzsendfile - exit - "));
 DSERIAL_PRINTLN(ret);
       return(ret);
@@ -392,12 +442,12 @@ DSERIAL_PRINTLN(ret);
 
 
 /* Send the data in the file */
-int ZModemSend::zsendfdata(void)
+int ZModemSend::sendFileData(void)
 {
   int c, n;
   uint8_t e;
   int newcnt;
-  uint8_t junkcount;          /* Counts garbage chars received by TX */
+  uint8_t junkcount = 0;          /* Counts garbage chars received by TX */
 
 DSERIAL_PRINT(F("\nzsendfdata: "));
 DSERIAL_PRINT(F("number = "));
@@ -405,7 +455,6 @@ DSERIAL_PRINT(Filesleft+1);
 DSERIAL_PRINT(F("   length = "));
 DSERIAL_PRINTLN(Totalleft);
   Lrxpos = 0;
-  junkcount = 0;
   Beenhereb4 = FALSE;
 somemore:
   //if (setjmp(intrjmp)) {
@@ -488,7 +537,7 @@ DSERIAL_PRINTLN(n);
       e = ZCRCG;
     if (Verbose>1)
       fprintf(stderr, "\r%7ld ZMODEM%s    ",Txpos, Crc32t?" CRC-32":"");
-    zsdata(txbuf, n, e);
+    sendData(txbuf, n, e);
     bytcnt = Txpos += n;
     if (e == ZCRCW)
       goto waitack;
@@ -516,7 +565,7 @@ DSERIAL_PRINTLN(n);
           ioctl(iofd, TCFLSH, 1);
 #endif
           /* zcrce - dinna wanna starta ping-pong game */
-          zsdata(txbuf, 0, ZCRCE);
+          sendData(txbuf, 0, ZCRCE);
           goto gotack;
         case XOFF:              /* Wait a while for an XON */
         case XOFF|0200:
@@ -687,7 +736,13 @@ void ZModemSend::zmodem_send_file(FsFile &file) {
 /* Send ZMODEM binary header hdr of type type */
 void ZModemSend::zsbhdr(int type, char *hdr)
 {
+  ZMCRC32 crc32;
+  crc32.begin(0xFFFFFFFF);
 
+  static ZMCRC16 crc16;
+  crc16.begin(0);            // initialize to 0
+
+  int n;
 
   vfile(F("zsbhdr: %s %lx"), frametypes[type+FTOFFSET], rclhdr(hdr));
   /*  if (type == ZDATA)
@@ -698,39 +753,36 @@ void ZModemSend::zsbhdr(int type, char *hdr)
   _serial->write(ZDLE);
   //Pete (El Supremo) This looks wrong but it is correct - the code fails if == is used
   if ((Crc32tx = Txfcs32)) {
-    int n;
-    unsigned long crc;
 
     _serial->write(ZBIN32);
+
     zsendchar(type);
-    crc = 0xFFFFFFFFL;
-    crc = UPDC32(type, crc);
+    crc32.update(type);
 
     for (n=4; --n >= 0; ++hdr) {
-      crc = UPDC32((255 & *hdr), crc);
+      crc32.update(255 & *hdr);
       zsendchar(*hdr);
     }
-    crc = ~crc;
+    crc32.invert();
     for (n=4; --n >= 0;) {
-      zsendchar((int)crc);
-      crc >>= 8;
+      zsendchar((uint8_t)crc32.get());
+      crc32.rightshift(8);
     }
   } else {
-    int n;
-    unsigned short crc=0;
 
     _serial->write(ZBIN);
+
     zsendchar(type);
-    crc = updcrc(type, crc);
+    crc16.update(type);
 
     for (n=4; --n >= 0; ++hdr) {
       zsendchar(*hdr);
-      crc = updcrc((255& *hdr), crc);
+      crc16.update(255& *hdr);
     }
-    crc = updcrc(0,crc);
-    crc = updcrc(0,crc);
-    zsendchar(crc>>8);
-    zsendchar(crc);
+    crc16.update(0);
+    crc16.update(0);
+    zsendchar(crc16.get()>>8);
+    zsendchar(crc16.get());
   }
   if (type != ZDATA)
     _serial->flush();

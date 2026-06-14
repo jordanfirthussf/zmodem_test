@@ -13,13 +13,13 @@ private:
 
     static int wctxpn(const char *name);
     static int wcs(const char *oname);
-    static int zsendfile(char *buf, int blen);
+    static int sendZFILE(char *buf, int blen);
     static void sendzrqinit();
     static void saybibi();
     static int getinsync(int flag);
     static int filbuf(char *buf, int count);
     static int zfilbuf();
-    static int zsendfdata();
+    static int sendFileData();
     static void zsbhdr(int type, char *hdr);
     static int wcputsec(char *buf, int sectnum, int cseclen);
 
