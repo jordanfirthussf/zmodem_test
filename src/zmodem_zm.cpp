@@ -154,17 +154,19 @@ void ZModem::zsdata(char *buf,int length,int frameend)
     unsigned long crc;
   
     crc = 0xFFFFFFFFL;
+    // crc32 = 0xFFFFFFFFL;
+
     for (;--length >= 0; ++buf) {
-      c = *buf & 0377;
-      if (c & 0140)
-        _serial->write(lastsent = c);
-      else
-        zsendline(c);
-      crc = UPDC32(c, crc);
+      // c = *buf & 255; // turns char* into int
+      zsendchar(*buf);
+      crc = UPDC32(*buf & 255, crc);
+      // UpdateCRC32(*buf & 255);
     }
     _serial->write(ZModem::ZDLE);
     _serial->write(frameend);
     crc = UPDC32(frameend, crc);
+
+    // UpdateCRC32(frameend & 255);
   
     crc = ~crc;
     for (length=4; --length >= 0;) {
@@ -172,22 +174,28 @@ void ZModem::zsdata(char *buf,int length,int frameend)
       crc >>= 8;
     }
   } else {
+      ZMCRC16 crc16;
+      crc16.begin();
       unsigned short crc = 0;
     for (;--length >= 0; ++buf) {
       zsendchar(*buf);
 
       crc = updcrc((255 & *buf), crc);
+      crc16.update(*buf & 255);
     }
 
     _serial->write(ZModem::ZDLE);
     _serial->write(frameend);
     crc = updcrc(frameend, crc);
+    crc16.update(frameend);
 
     crc = updcrc(0, crc);
     crc = updcrc(0, crc);
+    crc16.update(0);
+    crc16.update(0);
 
-    zsendchar(crc>>8);
-    zsendchar(crc);
+    zsendchar(crc16.get()>>8);
+    zsendchar(crc16.get());
   }
   if (frameend == ZModem::ZCRCW) {
     _serial->write(ZModem::XON);
@@ -733,6 +741,29 @@ int ZModem::readline(int timeout) {
 }
 
 
-/* End of zm.c */
+
+
+
+
+
+
+    /* crctab calculated by Mark G. Mendel, Network Systems Corporation */
+    uint16_t ZMCRC16::crc16;
+
+    void ZMCRC16::begin() {crc16 = 0;}
+    void ZMCRC16::begin(uint16_t value) {crc16 = value; }
+
+    void ZMCRC16::update(uint8_t cp) {
+        crc16 = (crctab2[((crc16 >> 8) & 255)] ^ (crc16 << 8)) ^ cp;
+    }
+
+  uint16_t ZMCRC16::get() {return crc16;}
+
+
+
 #endif
+
+
+
+
 
