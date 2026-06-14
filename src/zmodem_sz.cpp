@@ -171,87 +171,7 @@ DSERIAL_PRINT(F("  length = ")); DSERIAL_PRINTLN(Totalleft);
   return sendZFILE(txbuf, 1+strlen(p)+(p-txbuf));
 }
 
-int ZModemSend::wcputsec(char *buf,int sectnum,int cseclen)
-{
-  int checksum, wcj;
-  char *cp;
-  uint16_t oldcrc;
-  int firstch;
-  uint8_t attempts;
 
-  firstch=0;      /* part of logic to detect CAN CAN */
-
-  if (Verbose>2)
-    fprintf(stderr, "Sector %3d %2dk\n", Totsecs, Totsecs/8 );
-  else if (Verbose>1)
-    fprintf(stderr, "\rSector %3d %2dk ", Totsecs, Totsecs/8 );
-  for (attempts=0; attempts <= Tx_RETRYMAX; attempts++) {
-    Lastrx= firstch;
-    _serial->write(cseclen==1024?STX:SOH);
-    _serial->write(sectnum);
-    _serial->write(-sectnum -1);
-    oldcrc=checksum=0;
-    for (wcj=cseclen,cp=buf; --wcj>=0; ) {
-      _serial->write(*cp);
-      oldcrc=updcrc((255& *cp), oldcrc);
-      checksum += *cp++;
-    }
-    if (Crcflg) {
-      oldcrc = updcrc(0, oldcrc);
-      oldcrc = updcrc(0,oldcrc);
-      _serial->write((int)oldcrc>>8);
-      _serial->write((int)oldcrc);
-    }
-    else
-      _serial->write(checksum);
-
-    if (Optiong) {
-      firstsec = FALSE;
-      return OK;
-    }
-    firstch = readline(Rxtimeout);
-gotnak:
-    switch (firstch) {
-    case CAN:
-      if(Lastrx == CAN) {
-cancan:
-        zperr("Cancelled");
-        return ERROR;
-      }
-      break;
-    case TIMEOUT:
-      zperr("Timeout on sector ACK");
-      continue;
-    case WANTCRC:
-      if (firstsec)
-        Crcflg = TRUE;
-    case NAK:
-      zperr("NAK on sector");
-      continue;
-    case ACK:
-      firstsec=FALSE;
-      Totsecs += (cseclen>>7);
-      return OK;
-    case ERROR:
-      zperr("Got burst for sector ACK");
-      break;
-    default:
-      zperr("Got %02x for sector ACK", firstch);
-      break;
-    }
-    for (;;) {
-      Lastrx = firstch;
-      if ((firstch = readline(Rxtimeout)) == TIMEOUT)
-        break;
-      if (firstch == NAK || firstch == WANTCRC)
-        goto gotnak;
-      if (firstch == CAN && Lastrx == CAN)
-        goto cancan;
-    }
-  }
-  zperr("Retry Count Exceeded");
-  return ERROR;
-}
 
 
 
@@ -372,7 +292,6 @@ flags (ZF0...ZF3)
 int ZModemSend::sendZFILE(char *buf, int blen)
 {
   int c;
-  unsigned long crc;
 
 DSERIAL_PRINTLN(F("\nzsendfile"));
 
@@ -409,8 +328,10 @@ DSERIAL_PRINTLN(F("\nzsendfile - ZFIN"));
       crc32.begin(0xFFFFFFFF);
       if (Canseek >= 0) {
         _fout->seekSet(0);
-        while (((c = _fout->read()) != -1)) // && --Rxpos)
+        while (((c = _fout->read()) != -1)) {
+          // && --Rxpos)
           crc32.update(c);
+        }
         crc32.invert();
 
           _fout->seekSet(0);
@@ -580,8 +501,6 @@ DSERIAL_PRINTLN(n);
 
 DSERIAL_PRINTLN("zsendfdata - 4");
 
-//  if ( !Fromcu)
-//    signal(SIGINT, SIG_IGN);
 
   for (;;) {
     stohdr(Txpos);
@@ -734,7 +653,7 @@ void ZModemSend::zmodem_send_file(FsFile &file) {
 
 
 /* Send ZMODEM binary header hdr of type type */
-void ZModemSend::zsbhdr(int type, char *hdr)
+void ZModemSend::zsbhdr(uint8_t type, char *hdr)
 {
   ZMCRC32 crc32;
   crc32.begin(0xFFFFFFFF);
@@ -756,33 +675,29 @@ void ZModemSend::zsbhdr(int type, char *hdr)
 
     _serial->write(ZBIN32);
 
-    zsendchar(type);
-    crc32.update(type);
+    zSendCharCRC(type);
 
     for (n=4; --n >= 0; ++hdr) {
-      crc32.update(255 & *hdr);
-      zsendchar(*hdr);
+      zSendCharCRC(*hdr);
     }
     crc32.invert();
     for (n=4; --n >= 0;) {
-      zsendchar((uint8_t)crc32.get());
+      zSendChar((uint8_t)crc32.get());
       crc32.rightshift(8);
     }
   } else {
 
     _serial->write(ZBIN);
 
-    zsendchar(type);
-    crc16.update(type);
+    zSendCharCRC(type);
 
     for (n=4; --n >= 0; ++hdr) {
-      zsendchar(*hdr);
-      crc16.update(255& *hdr);
+      zSendCharCRC(*hdr);
     }
     crc16.update(0);
     crc16.update(0);
-    zsendchar(crc16.get()>>8);
-    zsendchar(crc16.get());
+    zSendChar((uint8_t)(crc16.get()>>8));
+    zSendChar((uint8_t)crc16.get());
   }
   if (type != ZDATA)
     _serial->flush();

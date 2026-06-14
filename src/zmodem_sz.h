@@ -20,7 +20,7 @@ private:
     static int filbuf(char *buf, int count);
     static int zfilbuf();
     static int sendFileData();
-    static void zsbhdr(int type, char *hdr);
+    static void zsbhdr(uint8_t type, char *hdr);
     static int wcputsec(char *buf, int sectnum, int cseclen);
 
     static FsFile *_fout;

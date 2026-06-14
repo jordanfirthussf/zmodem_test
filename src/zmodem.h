@@ -225,10 +225,8 @@ protected:
 
     static int zrhhdr(char *hdr);
     static void zputhex(int c);
-    static void zsendchar(int c); static void zsendchar(char c);
-    static void sendline(int c); static void sendline(char c);
-    static unsigned short updcrc(uint8_t cp, uint16_t& crc);
-    static void UpdateCRC32(uint8_t b);
+    static void zSendCharCRC(char c);   static void zSendCharCRC(uint8_t c);
+    static void zSendChar(uint8_t c);   static void zSendChar(char c);
     static void bttyout(int c);
     static void stohdr(long pos);
     static long rclhdr(char *hdr);

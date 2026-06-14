@@ -80,8 +80,9 @@ ZModem::ZModem() = default;
 /* Send ZMODEM HEX header hdr of type type */
 void ZModem::zshhdr(int type,char *hdr)
 {
+  static ZMCRC16 crc16;
   int n;
-  unsigned short crc=0;
+  crc16.begin(0);
 
   vfile(F("zshhdr: %s %lx"), frametypes[type+FTOFFSET], rclhdr(hdr));
   _serial->write(ZModem::ZPAD);
@@ -91,15 +92,15 @@ void ZModem::zshhdr(int type,char *hdr)
   zputhex(type);
   Crc32tx = 0;
 
-  crc = updcrc(type, crc);
+  crc16.update(type);
   for (n=4; --n >= 0; ++hdr) {
     zputhex(*hdr); 
-    crc = updcrc((255 & *hdr), crc);
+    crc16.update(*hdr);
   }
-  crc = updcrc(0,crc);
-  crc = updcrc(0,crc);
-  zputhex(crc>>8); 
-  zputhex(crc);
+  crc16.update(0);
+  crc16.update(0);
+  zputhex((uint8_t)(crc16.get()>>8));
+  zputhex((uint8_t)crc16.get());
 
   /* Make it printable on remote machine */
   _serial->write(015);
@@ -110,15 +111,6 @@ void ZModem::zshhdr(int type,char *hdr)
   if (type != ZModem::ZFIN && type != ZModem::ZACK)
     _serial->write(021);
   _serial->flush();
-}
-
-/// @brief update CRC (cyclic redundancy check), the error correction used by ZModem
-/// @param cp character pointer (new byte)
-/// @param crc running crc
-/// @return crc (updated with new byte)
-unsigned short ZModem::updcrc(uint8_t cp, uint16_t& crc) {
-  crc = (crctab[((crc >> 8) & 255)] ^ (crc << 8)) ^ cp;
-  return crc;
 }
 
 /*
@@ -138,7 +130,7 @@ static char *Zendnames[] = {
  */
 void ZModem::sendData(char *buf,int length,int frameend) {
 
-    ZMCRC32 crc32;
+    static ZMCRC32 crc32;
     crc32.begin(0xFFFFFFFF);
 
     static ZMCRC16 crc16;
@@ -146,7 +138,7 @@ void ZModem::sendData(char *buf,int length,int frameend) {
 
   // send all characters in buf
     for (;--length >= 0; ++buf) {
-      zsendchar(*buf);
+      zSendChar(*buf);
       if (Crc32tx) {
         crc32.update(*buf & 255);
       }
@@ -162,7 +154,7 @@ void ZModem::sendData(char *buf,int length,int frameend) {
     crc32.update(frameend);
     crc32.invert();
     for (length=4; --length >= 0;) {
-      zsendchar((uint8_t)crc32.get());
+      zSendChar((uint8_t)crc32.get());
       crc32.rightshift(8);
     }
   }
@@ -170,8 +162,8 @@ void ZModem::sendData(char *buf,int length,int frameend) {
       crc16.update(frameend);
       crc16.update(0);
       crc16.update(0);
-      zsendchar(crc16.get()>>8);
-      zsendchar(crc16.get());
+      zSendChar((uint8_t)(crc16.get()>>8));
+      zSendChar((uint8_t)crc16.get());
     }
 
   if (frameend == ZModem::ZCRCW) {
@@ -191,10 +183,12 @@ int ZModem::zrdata(char *buf,int length)
   char *end;
   int d;
 
+  static ZMCRC16 crc16;
+  static ZMCRC32 crc32;
+
   if (Rxframeind == ZModem::ZBIN32) {
-    unsigned long crc;
-  
-    crc = 0xFFFFFFFFL;  
+
+    crc32.begin(0xFFFFFFFF);
     Rxcount = 0;  
     end = buf + length;
     while (buf <= end) {
@@ -207,20 +201,20 @@ int ZModem::zrdata(char *buf,int length)
         case ZModem::GOTCRCW:
           d = c;  
           c &= 255;
-          crc = UPDC32(c, crc);
+          crc32.update(c);
           if ((c = zdlread()) & ~255)
             goto crcfoo32;
-          crc = UPDC32(c, crc);
+          crc32.update(c);
           if ((c = zdlread()) & ~255)
             goto crcfoo32;
-          crc = UPDC32(c, crc);
+          crc32.update(c);
           if ((c = zdlread()) & ~255)
             goto crcfoo32;
-          crc = UPDC32(c, crc);
+          crc32.update(c);
           if ((c = zdlread()) & ~255)
             goto crcfoo32;
-          crc = UPDC32(c, crc);
-          if (crc != 0xDEBB20E3) {
+          crc32.update(c);
+          if (crc32.get() != 0xDEBB20E3) {
             zperr(badcrc);
             return ERROR;
           }
@@ -240,14 +234,15 @@ int ZModem::zrdata(char *buf,int length)
         }
       }
       *buf++ = c;
-      crc = UPDC32(c, crc);
+      crc32.update(c);
     }
     zperr("Data subpacket too long");
     return ERROR;
   } else {
     unsigned short crc;
 
-    crc = Rxcount = 0;  
+    Rxcount = 0;
+    crc16.begin(0);
     end = buf + length;
     while (buf <= end) {
       if ((c = zdlread()) & ~255) {
@@ -257,13 +252,13 @@ int ZModem::zrdata(char *buf,int length)
         case ZModem::GOTCRCG:
         case ZModem::GOTCRCQ:
         case ZModem::GOTCRCW:
-          crc = updcrc((d=c)&255, crc);
+          crc16.update((d=c)&255);
           if ((c = zdlread()) & ~255)
             goto crcfoo16;
-          crc = updcrc(c, crc);
+          crc16.update(c);
           if ((c = zdlread()) & ~255)
             goto crcfoo16;
-          crc = updcrc(c, crc);
+          crc16.update(c);
           if (crc & 0xFFFF) {
             zperr(badcrc);
             return ERROR;
@@ -284,7 +279,7 @@ int ZModem::zrdata(char *buf,int length)
         }
       }
       *buf++ = c;
-      crc = updcrc(c, crc);
+      crc16.update(c);
     }
     zperr("Data subpacket too long");
     return ERROR;
@@ -437,27 +432,28 @@ break;
 int ZModem::zrhhdr(char *hdr)
 {
   int c;
-  unsigned short crc=0;
+  static ZMCRC16 crc16;
+  crc16.begin(0);
   int n;
 
   if ((c = zgethex()) < 0)
     return c;
   Rxtype = c;
-  crc = updcrc(c, crc);
+  crc16.update(c);
 
   for (n=4; --n >= 0; ++hdr) {
     if ((c = zgethex()) < 0)
       return c;
-    crc = updcrc(c, crc);
+    crc16.update(c);
     *hdr = c;
   }
   if ((c = zgethex()) < 0)
     return c;
-  crc = updcrc(c, crc);
+  crc16.update(c);
   if ((c = zgethex()) < 0)
     return c;
-  crc = updcrc(c, crc);
-  if (crc & 0xFFFF) {
+  crc16.update(c);
+  if (crc16.get() & 0xFFFF) {
     zperr(badcrc); 
     return ERROR;
   }
@@ -493,13 +489,30 @@ void ZModem::zputhex(int c)
 
 /*
  * Send character c with ZMODEM escape sequence encoding.
- *  Escape XON, XOFF. Escape CR following @ (Telenet net escape)
+ *  Escape XON, XOFF. Escape CR following @ (Telnet net escape)
  */
-void ZModem::zsendchar(char c) {
-  zsendchar(c & 255); // turn into int
+void ZModem::zSendCharCRC(char c) {
+  zSendCharCRC(c); // turn into int
 }
 
-void ZModem::zsendchar(int c)
+void ZModem::zSendCharCRC(uint8_t c) {
+  static ZMCRC32  crc32;
+  static ZMCRC16  crc16;
+  if (Crc32tx) {
+    crc32.update(c);
+  }
+  else {
+    crc16.update(c);
+  }
+  zSendChar(c); // turn into int
+}
+
+
+void ZModem::zSendChar(char c) {
+  zSendChar(c); // turn into int
+}
+
+void ZModem::zSendChar(uint8_t c)
 {
   /* check for non-control characters */
 
