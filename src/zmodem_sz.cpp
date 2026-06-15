@@ -27,8 +27,8 @@ extern long Lrxpos;            /* Receiver's last reported offset */
 
 /*
  * Attention string to be executed by receiver to interrupt streaming data
- *  when an error is detected.  A pause (0336) may be needed before the
- *  ^C (03) or after it.
+ *  when an error is detected.  A pause (0xde) may be needed before the
+ *  ^C (0x03) or after it.
  */
 #ifdef READCHECK
 char Myattn[] = { 
@@ -36,7 +36,7 @@ char Myattn[] = {
 #else
 #ifdef USG
 char Myattn[] = { 
-  03, 0336, 0 };
+  0x03, 0xde, 0 };
 #else
 char Myattn[] = { 
   0 };
@@ -193,19 +193,19 @@ DSERIAL_PRINTLN(F("'"));
     if (m <= 0)
       return 0;
     while (m < count)
-      buf[m++] = 032;
+      buf[m++] = 0x1a;
     return count;
   }
   m=count;
   if (Lfseen) {
-    *buf++ = 012;
+    *buf++ = 0x0a;
     --m;
     Lfseen = 0;
   }
 //  while ((c=getc(in))!=EOF) {
   while((c = _fout->read()) != -1) {
-    if (c == 012) {
-      *buf++ = 015;
+    if (c == 0x0a) {
+      *buf++ = 0x0d;
       if (--m == 0) {
         Lfseen = TRUE;
         break;
@@ -489,7 +489,7 @@ DSERIAL_PRINTLN(n);
           sendData(txbuf, 0, ZCRCE);
           goto gotack;
         case XOFF:              /* Wait a while for an XON */
-        case XOFF|0200:
+        case XOFF|0x80:
           readline(100);
         default:
           ++junkcount;
@@ -617,7 +617,7 @@ void ZModemSend::sendzrqinit(void)
 void ZModemSend::saybibi() {
   for (;;) {
     stohdr(0L);             /* CAF Was zsbhdr - minor change */
-    zshhdr(ZFIN, Txhdr);    /*  to make debugging easier */
+    sendHexHeader(ZFIN, Txhdr);    /*  to make debugging easier */
     switch (zgethdr(Rxhdr, 0)) {
     case ZFIN:
       _serial->write('O');

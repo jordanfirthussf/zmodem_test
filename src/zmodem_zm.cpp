@@ -78,21 +78,21 @@ uint8_t errors;
 ZModem::ZModem() = default;
 
 /* Send ZMODEM HEX header hdr of type type */
-void ZModem::zshhdr(int type,char *hdr)
+void ZModem::sendHexHeader(const int type, const char *hdr)
 {
   static ZMCRC16 crc16;
   int n;
   crc16.begin(0);
+  Crc32tx = 0; // hex frames always use 16-bit CRC
 
   vfile(F("zshhdr: %s %lx"), frametypes[type+FTOFFSET], rclhdr(hdr));
-  _serial->write(ZModem::ZPAD);
-  _serial->write(ZModem::ZPAD);
-  _serial->write(ZModem::ZDLE);
-  _serial->write(ZModem::ZHEX);
+  _serial->write(ZPAD);
+  _serial->write(ZPAD);
+  _serial->write(ZDLE);
+  _serial->write(ZHEX);
   zputhex(type);
-  Crc32tx = 0;
-
   crc16.update(type);
+
   for (n=4; --n >= 0; ++hdr) {
     zputhex(*hdr); 
     crc16.update(*hdr);
@@ -103,13 +103,13 @@ void ZModem::zshhdr(int type,char *hdr)
   zputhex((uint8_t)crc16.get());
 
   /* Make it printable on remote machine */
-  _serial->write(015);
-  _serial->write(0212);
+  _serial->write(CR);
+  _serial->write(0x8a);
   /*
          * Uncork the remote in case a fake XOFF has stopped data flow
    */
-  if (type != ZModem::ZFIN && type != ZModem::ZACK)
-    _serial->write(021);
+  if (type != ZFIN && type != ZACK)
+    _serial->write(XON);
   _serial->flush();
 }
 
@@ -146,7 +146,7 @@ void ZModem::sendData(char *buf,int length,int frameend) {
         crc16.update(*buf & 255);
       }
     } // end for (send all characters in buf)
-    _serial->write(ZModem::ZDLE);
+    _serial->write(ZDLE);
     _serial->write(frameend);
 
 
@@ -166,8 +166,8 @@ void ZModem::sendData(char *buf,int length,int frameend) {
       zSendChar((uint8_t)crc16.get());
     }
 
-  if (frameend == ZModem::ZCRCW) {
-    _serial->write(ZModem::XON);
+  if (frameend == ZCRCW) {
+    _serial->write(XON);
     _serial->flush();
   }
 }
@@ -186,7 +186,7 @@ int ZModem::zrdata(char *buf,int length)
   static ZMCRC16 crc16;
   static ZMCRC32 crc32;
 
-  if (Rxframeind == ZModem::ZBIN32) {
+  if (Rxframeind == ZBIN32) {
 
     crc32.begin(0xFFFFFFFF);
     Rxcount = 0;  
@@ -195,10 +195,10 @@ int ZModem::zrdata(char *buf,int length)
       if ((c = zdlread()) & ~255) {
   crcfoo32:
         switch (c) {
-        case ZModem::GOTCRCE:
-        case ZModem::GOTCRCG:
-        case ZModem::GOTCRCQ:
-        case ZModem::GOTCRCW:
+        case GOTCRCE:
+        case GOTCRCG:
+        case GOTCRCQ:
+        case GOTCRCW:
           d = c;  
           c &= 255;
           crc32.update(c);
@@ -222,9 +222,9 @@ int ZModem::zrdata(char *buf,int length)
           vfile(F("zrdat32: %d %s"), Rxcount,
           Zendnames[(d-GOTCRCE)&3]);
           return d;
-        case ZModem::GOTCAN:
+        case GOTCAN:
           zperr("Sender Canceled");
-          return ZModem::ZCAN;
+          return ZCAN;
         case TIMEOUT:
           zperr("TIMEOUT");
           return c;
@@ -248,10 +248,10 @@ int ZModem::zrdata(char *buf,int length)
       if ((c = zdlread()) & ~255) {
   crcfoo16:
         switch (c) {
-        case ZModem::GOTCRCE:
-        case ZModem::GOTCRCG:
-        case ZModem::GOTCRCQ:
-        case ZModem::GOTCRCW:
+        case GOTCRCE:
+        case GOTCRCG:
+        case GOTCRCQ:
+        case GOTCRCW:
           crc16.update((d=c)&255);
           if ((c = zdlread()) & ~255)
             goto crcfoo16;
@@ -267,9 +267,9 @@ int ZModem::zrdata(char *buf,int length)
           vfile(F("zrdata: %d  %s"), Rxcount,
           Zendnames[(d-GOTCRCE)&3]);
           return d;
-        case ZModem::GOTCAN:
+        case GOTCAN:
           zperr("Sender Canceled");
-          return ZModem::ZCAN;
+          return ZCAN;
         case TIMEOUT:
           zperr("TIMEOUT");
           return c;
@@ -315,25 +315,25 @@ again:
   case RCDO:
   case TIMEOUT:
     goto fifi;
-  case ZModem::CAN:
+  case CAN:
 gotcan:
     if (--cancount <= 0) {
-      c = ZModem::ZCAN;
+      c = ZCAN;
       goto fifi;
     }
     switch (c = readline(1)) {
     case TIMEOUT:
       goto again;
-    case ZModem::ZCRCW:
+    case ZCRCW:
       c = ERROR;
       /* **** FALL THRU TO **** */
     case RCDO:
       goto fifi;
     default:
       break;
-    case ZModem::CAN:
+    case CAN:
       if (--cancount <= 0) {
-        c = ZModem::ZCAN;
+        c = ZCAN;
         goto fifi;
       }
       goto again;
@@ -345,7 +345,7 @@ agn2:
       zperr("Garbage count exceeded");
       return(ERROR);
     }
-    if (eflag && ((c &= 0177) & 0140))
+    if (eflag && ((c &= 0x7f) & 0x60))
       bttyout(c);
     else if (eflag > 1)
       bttyout(c);
@@ -353,22 +353,22 @@ agn2:
     fflush(stderr);
 #endif
     goto startover;
-  case ZModem::ZPAD|0200:         /* This is what we want. */
+  case ZPAD|0x80:         /* This is what we want. */
     Not8bit = c;
-  case ZModem::ZPAD:              /* This is what we want. */
+  case ZPAD:              /* This is what we want. */
     break;
   }
   cancount = 5;
 splat:
   switch (c = noxrd7()) {
-  case ZModem::ZPAD:
+  case ZPAD:
     goto splat;
   case RCDO:
   case TIMEOUT:
     goto fifi;
   default:
     goto agn2;
-  case ZModem::ZDLE:              /* This is what we want. */
+  case ZDLE:              /* This is what we want. */
     break;
   }
 
@@ -376,23 +376,23 @@ splat:
   case RCDO:
   case TIMEOUT:
     goto fifi;
-  case ZModem::ZBIN:
+  case ZBIN:
     return(ERROR);
     // Rxframeind = ZModem::ZBIN;
     // Crc32rx = FALSE;
     // c =  zrbhdr(hdr);
     // break;
-  case ZModem::ZBIN32:
+  case ZBIN32:
     return(ERROR);
     // Crc32rx = Rxframeind = ZModem::ZBIN32;
     // c =  zrbhdr32(hdr);
     // break;
-  case ZModem::ZHEX:
-    Rxframeind = ZModem::ZHEX;
+  case ZHEX:
+    Rxframeind = ZHEX;
     Crc32rx = FALSE;
     c =  zrhhdr(hdr);
     break;
-  case ZModem::CAN:
+  case CAN:
     goto gotcan;
   default:
     goto agn2;
@@ -404,11 +404,11 @@ splat:
 fifi:
 
   switch (c) {
-  case ZModem::GOTCAN:
-    c = ZModem::ZCAN;
+  case GOTCAN:
+    c = ZCAN;
     /* **** FALL THRU TO **** */
-  case ZModem::ZNAK:
-  case ZModem::ZCAN:
+  case ZNAK:
+  case ZCAN:
   case ERROR:
   case TIMEOUT:
   case RCDO:
@@ -458,13 +458,13 @@ int ZModem::zrhhdr(char *hdr)
     return ERROR;
   }
   switch ( c = readline(1)) {
-  case 0215:
+  case 0x8d:
     Not8bit = c;
     /* **** FALL THRU TO **** */
-  case 015:
+  case CR:
     /* Throw away possible cr/lf */
     switch (c = readline(1)) {
-    case 012:
+    case LF:
       Not8bit |= c;
     }
   }
@@ -521,34 +521,34 @@ void ZModem::zSendChar(uint8_t c)
 
   else {
     switch (c &= 255) {
-    case ZModem::ZDLE:
-      _serial->write(ZModem::ZDLE);
-      _serial->write(lastsent = (c ^= 0100));
+    case ZDLE:
+      _serial->write(ZDLE);
+      _serial->write(lastsent = (c ^= 0x40));
       break;
-    case 015: // CR
-    case 0215: //
-      if (!Zctlesc && (lastsent & 0177) != '@') {
+    case CR: // CR
+    case 0x8d: //
+      if (!Zctlesc && (lastsent & 0x7f) != '@') {
         _serial->write(lastsent = c);
       }
         break;
 
       /* **** FALL THRU TO **** */
-    case 020: // DLE
-    case 021: // DC1
-    case 023: // DC3
-    case 0220: // hex 8D
-    case 0221: // '
-    case 0223: // "
+    case 0x10: // DLE
+    case XON: // DC1
+    case XOFF: // DC3
+    case 0x90: // hex 8D
+    case 0x91: // '
+    case 0x93: // "
       _serial->write(ZModem::ZDLE);
-      c ^= 0100;
+      c ^= 0x40;
 // sendit:
       _serial->write(lastsent = c);
       break;
 
     default:
-      if (Zctlesc && ! (c & 0140)) {
+      if (Zctlesc && ! (c & 0x60)) {
         _serial->write(ZModem::ZDLE);
-        c ^= 0100;
+        c ^= 0x40;
       }
       _serial->write(lastsent = c);
     }
@@ -597,13 +597,13 @@ again:
   switch (c) {
   case ZModem::ZDLE:
     break;
-  case 023:
-  case 0223:
-  case 021:
-  case 0221:
+  case XOFF:
+  case 0x93:
+  case XON:
+  case 0x91:
     goto again;
   default:
-    if (Zctlesc && !(c & 0140)) {
+    if (Zctlesc && !(c & 0x60)) {
       goto again;
     }
     return c;
@@ -626,20 +626,20 @@ again2:
   case ZModem::ZCRCW:
     return (c | ZModem::GOTOR);
   case ZModem::ZRUB0:
-    return 0177;
+    return 0x7f;
   case ZModem::ZRUB1:
     return 255;
-  case 023:
-  case 0223:
-  case 021:
-  case 0221:
+  case XOFF:
+  case 0x93:
+  case XON:
+  case 0x91:
     goto again2;
   default:
-    if (Zctlesc && ! (c & 0140)) {
+    if (Zctlesc && ! (c & 0x60)) {
       goto again2;
     }
-    if ((c & 0140) ==  0100)
-      return (c ^ 0100);
+    if ((c & 0x60) ==  0x40)
+      return (c ^ 0x40);
     break;
   }
   if (Verbose>1)
@@ -658,12 +658,12 @@ int ZModem::noxrd7(void)
   for (;;) {
     if ((c = readline(Rxtimeout)) < 0)
       return c;
-    switch (c &= 0177) {
+    switch (c &= 0x7f) {
     case XON:
     case XOFF:
       continue;
     default:
-      if (Zctlesc && !(c & 0140))
+      if (Zctlesc && !(c & 0x60))
         continue;
     case '\r':
     case '\n':

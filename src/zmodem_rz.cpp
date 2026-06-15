@@ -363,7 +363,7 @@
 //       Blklen=128;
 // get2:
 //       sectcurr=ZModem::readline(1);
-//       if ((sectcurr+(oldcrc=ZModem::readline(1)))==0377) {
+//       if ((sectcurr+(oldcrc=ZModem::readline(1)))==0xff) {
 //         oldcrc=checksum=0;
 //         for (p=rxbuf,wcj=Blklen; --wcj>=0; ) {
 //           if ((firstch=ZModem::readline(1)) < 0) {
@@ -393,7 +393,7 @@
 //             return sectcurr;
 //           }
 //         }
-//         else if (((checksum-firstch)&0377)==0) {
+//         else if (((checksum-firstch)&0xff)==0) {
 //           Firstsec=FALSE;
 //           return sectcurr;
 //         }
@@ -1079,21 +1079,21 @@
 //   int c, n;
 //   unsigned short crc=0;
 //
-//   if ((c = zdlread()) & ~0377)
+//   if ((c = zdlread()) & ~0xff)
 //     return c;
 //   Rxtype = c;
 //   crc = updcrc(c, crc);
 //
 //   for (n=4; --n >= 0; ++hdr) {
-//     if ((c = zdlread()) & ~0377)
+//     if ((c = zdlread()) & ~0xff)
 //       return c;
 //     crc = updcrc(c, crc);
 //     *hdr = c;
 //   }
-//   if ((c = zdlread()) & ~0377)
+//   if ((c = zdlread()) & ~0xff)
 //     return c;
 //   crc = updcrc(c, crc);
-//   if ((c = zdlread()) & ~0377)
+//   if ((c = zdlread()) & ~0xff)
 //     return c;
 //   crc = updcrc(c, crc);
 //   if (crc & 0xFFFF) {
@@ -1115,7 +1115,7 @@
 //   int c, n;
 //   unsigned long crc;
 //
-//   if ((c = zdlread()) & ~0377)
+//   if ((c = zdlread()) & ~0xff)
 //     return c;
 //   Rxtype = c;
 //   crc = 0xFFFFFFFFL;
@@ -1125,7 +1125,7 @@
 // #endif
 //
 //   for (n=4; --n >= 0; ++hdr) {
-//     if ((c = zdlread()) & ~0377)
+//     if ((c = zdlread()) & ~0xff)
 //       return c;
 //     crc = UPDC32(c, crc);
 //     *hdr = c;
@@ -1134,7 +1134,7 @@
 // #endif
 //   }
 //   for (n=4; --n >= 0;) {
-//     if ((c = zdlread()) & ~0377)
+//     if ((c = zdlread()) & ~0xff)
 //       return c;
 //     crc = UPDC32(c, crc);
 // #ifdef DEBUGZ
