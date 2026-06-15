@@ -9,7 +9,7 @@
 
 extern char oneKbuf[1025];
 
-//extern int Rxtimeout;            /* Tenths of seconds to wait for something */
+//extern int Rxtimeout;            /* milliseconds to wait for something */
 
 /* Globals used by ZMODEM functions */
 extern uint8_t Rxframeind;         /* ZBIN ZBIN32, or ZHEX type of frame received */

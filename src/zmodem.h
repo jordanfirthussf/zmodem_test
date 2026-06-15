@@ -206,8 +206,8 @@ protected:
 
     // function definitions
     static int zdlread();
-    static int readline(int timeout);
-    static int zgethex();
+    static int readChar(unsigned long timeout);
+    static int zGetHex();
 
     static int noxrd7();
 
@@ -349,7 +349,7 @@ extern uint8_t Rxframeind;      /* ZBIN ZBIN32, or ZHEX type of frame received *
 extern uint8_t Rxtype;          /* Type of header received */
 extern int Rxcount;         /* Count of data bytes received */
 //extern int Zrwindow;        /* RX window size (controls garbage count) */
-extern int Rxtimeout;       /* Tenths of seconds to wait for something */
+extern int Rxtimeout;       /* milliseconds to wait for something */
 extern char Rxhdr[4];   /* Received header */
 extern char Txhdr[4];   /* Transmitted header */
 extern long Rxpos;      /* Received file position */

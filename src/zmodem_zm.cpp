@@ -29,7 +29,7 @@ long Bytesleft; // from rz - Shared with sz bytcnt
 long rxbytes;   // from rz - Shared with sz Lrxpos
 int Blklen;     // from rz - Shared with sz blklen
 
-#define Rxtimeout 100            /* Tenths of seconds to wait for something */
+#define Rxtimeout 10000           /* milliseconds to wait for something */
 
 
 // This buffer blends Txb (from sz) and secbuf (from rz) into a single buffer, saving 1K
@@ -259,7 +259,7 @@ int ZModem::zrdata(char *buf,int length)
           if ((c = zdlread()) & ~255)
             goto crcfoo16;
           crc16.update(c);
-          if (crc & 0xFFFF) {
+          if (crc16.get() & 0xFFFF) {
             zperr(badcrc);
             return ERROR;
           }
@@ -288,10 +288,7 @@ int ZModem::zrdata(char *buf,int length)
 
 /*
  * Read a ZMODEM header to hdr, either binary or hex.
- *  eflag controls local display of non zmodem characters:
- *      0:  no display
- *      1:  display printing characters only
- *      2:  display all non ZMODEM characters
+ *
  *  On success, set Zmodem to 1, set Rxpos and return type of header.
  *   Otherwise return negative on error.
  *   Return ERROR instantly if ZCRCW sequence, for fast error recovery.
@@ -307,8 +304,8 @@ startover:
   cancount = 5;
 again:
   /* Return immediate ERROR if ZCRCW sequence seen */
-  _serial->setTimeout(Rxtimeout * 100);
-  c = readline(Rxtimeout);
+  _serial->setTimeout(Rxtimeout);
+  c = readChar(Rxtimeout/10);
   _serial->setTimeout(TYPICAL_SERIAL_TIMEOUT);
   
   switch (c) {
@@ -321,7 +318,7 @@ gotcan:
       c = ZCAN;
       goto fifi;
     }
-    switch (c = readline(1)) {
+    switch (c = readChar(10)) {
     case TIMEOUT:
       goto again;
     case ZCRCW:
@@ -345,13 +342,6 @@ agn2:
       zperr("Garbage count exceeded");
       return(ERROR);
     }
-    if (eflag && ((c &= 0x7f) & 0x60))
-      bttyout(c);
-    else if (eflag > 1)
-      bttyout(c);
-#ifdef UNIX
-    fflush(stderr);
-#endif
     goto startover;
   case ZPAD|0x80:         /* This is what we want. */
     Not8bit = c;
@@ -412,13 +402,7 @@ fifi:
   case ERROR:
   case TIMEOUT:
   case RCDO:
-//    zperr("Got %s", frametypes[c+FTOFFSET]);
-    /* **** FALL THRU TO **** */
-//  default:
-//    if (c >= -3 && c <= FRTYPES)
-//      vfile(F("zgethdr: %s %lx"), frametypes[c+FTOFFSET], Rxpos);
-//    else
-//      vfile(F("zgethdr: %d %lx"), c, Rxpos);
+
 break;
   }
   return c;
@@ -432,38 +416,39 @@ break;
 int ZModem::zrhhdr(char *hdr)
 {
   int c;
-  static ZMCRC16 crc16;
-  crc16.begin(0);
   int n;
 
-  if ((c = zgethex()) < 0)
+  static ZMCRC16 crc16;
+  crc16.begin(0);
+
+  if ((c = zGetHex()) < 0)
     return c;
   Rxtype = c;
   crc16.update(c);
 
   for (n=4; --n >= 0; ++hdr) {
-    if ((c = zgethex()) < 0)
+    if ((c = zGetHex()) < 0)
       return c;
     crc16.update(c);
     *hdr = c;
   }
-  if ((c = zgethex()) < 0)
+  if ((c = zGetHex()) < 0)
     return c;
   crc16.update(c);
-  if ((c = zgethex()) < 0)
+  if ((c = zGetHex()) < 0)
     return c;
   crc16.update(c);
   if (crc16.get() & 0xFFFF) {
     zperr(badcrc); 
     return ERROR;
   }
-  switch ( c = readline(1)) {
+  switch ( c = readChar(10)) {
   case 0x8d:
     Not8bit = c;
     /* **** FALL THRU TO **** */
   case CR:
     /* Throw away possible cr/lf */
-    switch (c = readline(1)) {
+    switch (c = readChar(10)) {
     case LF:
       Not8bit |= c;
     }
@@ -558,7 +543,7 @@ void ZModem::zSendChar(uint8_t c)
 
 /* Decode two lower case hex digits into an 8 bit byte value */
 
-int ZModem::zgethex(void)
+int ZModem::zGetHex(void)
 {
   int c, n;
 
@@ -591,43 +576,45 @@ int ZModem::zdlread(){
 
 again:
   // Quick check for non control characters
-  if ((c = readline(Rxtimeout)) < 0)
+  if ((c = readChar(Rxtimeout/10)) < 0)
     return c;
 
   switch (c) {
-  case ZModem::ZDLE:
-    break;
-  case XOFF:
-  case 0x93:
-  case XON:
-  case 0x91:
-    goto again;
-  default:
-    if (Zctlesc && !(c & 0x60)) {
+
+    // if
+    case ZDLE:
+      break;
+    case XOFF:
+    case 0x93: // (XOFF|0x80)
+    case XON:
+    case 0x91: // (XON|0x80)
       goto again;
-    }
-    return c;
+    default:
+      if (Zctlesc && !(c & 0x60)) {
+        goto again;
+      }
+      return c;
   }
 again2:
-  if ((c = readline(Rxtimeout)) < 0)
+  if ((c = readChar(Rxtimeout/10)) < 0)
     return c;
-  if (c == ZModem::CAN && (c = readline(Rxtimeout)) < 0)
+  if (c == CAN && (c = readChar(Rxtimeout/10)) < 0)
     return c;
-  if (c == ZModem::CAN && (c = readline(Rxtimeout)) < 0)
+  if (c == CAN && (c = readChar(Rxtimeout/10)) < 0)
     return c;
-  if (c == ZModem::CAN && (c = readline(Rxtimeout)) < 0)
+  if (c == CAN && (c = readChar(Rxtimeout/10)) < 0)
     return c;
   switch (c) {
-  case ZModem::CAN:
-    return ZModem::GOTCAN;
-  case ZModem::ZCRCE:
-  case ZModem::ZCRCG:
-  case ZModem::ZCRCQ:
-  case ZModem::ZCRCW:
-    return (c | ZModem::GOTOR);
-  case ZModem::ZRUB0:
+  case CAN:
+    return GOTCAN;
+  case ZCRCE:
+  case ZCRCG:
+  case ZCRCQ:
+  case ZCRCW:
+    return (c | GOTOR);
+  case ZRUB0:
     return 0x7f;
-  case ZModem::ZRUB1:
+  case ZRUB1:
     return 255;
   case XOFF:
   case 0x93:
@@ -655,25 +642,27 @@ int ZModem::noxrd7(void)
 {
   int c;
 
-  for (;;) {
-    if ((c = readline(Rxtimeout)) < 0)
+  while (true) {
+
+    // catch TIMEOUT
+    if ((c = readChar(Rxtimeout/10)) < 0)
       return c;
+
     switch (c &= 0x7f) {
-    case XON:
-    case XOFF:
-      continue;
-    default:
-      if (Zctlesc && !(c & 0x60))
+      case XON:
+      case XOFF:
         continue;
-    case '\r':
-    case '\n':
-    case ZModem::ZDLE:
-      return c;
+      default:
+        if (Zctlesc && !(c & 0x60))
+          continue;
+      [[fallthrough]];
+      case '\r':
+      case '\n':
+      case ZDLE:
+        return c;
     }
   }
 }
-
-
 
 /* Store long integer pos in Txhdr */
 void ZModem::stohdr(long pos)
@@ -700,33 +689,14 @@ long ZModem::rclhdr(char *hdr)
 #endif
 
 
-
-/*
- * Local console output simulation
- */
-void ZModem::bttyout(int c)
-{
-#ifndef ARDUINO
-  if (Verbose || Fromcu)
-    putc(c, stderr);
-#endif
-}
-
-
-int ZModem::readline(int timeout) {
-  long then;
-  unsigned char c;
-
-  then = millis();
+int ZModem::readChar(unsigned long timeout) {
+  timeout+= millis();
   while(_serial->available() < 1) {
-    if(millis() - then > (unsigned int)timeout*10UL) {
-      //DSERIAL.println("");
+    if(millis() > timeout ) {
       return(TIMEOUT);
     }
   }
-  c = _serial->read();
-  //DSERIAL.write(c);
-  //DSERIAL.print(" ");
+  const unsigned char c = _serial->read();
   return(c);
 }
 

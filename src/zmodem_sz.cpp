@@ -309,7 +309,7 @@ again:
     c = zgethdr(Rxhdr, 1);
     switch (c) {
     case ZRINIT:
-      while ((c = readline(50)) > 0)
+      while ((c = readChar(500)) > 0)
         if (c == ZPAD) {
           goto again;
         }
@@ -412,7 +412,7 @@ DSERIAL_PRINTLN(F("zsendfdata - error - 1"));
 #ifdef SV
       switch (checked)
 #else
-        switch (readline(1))
+        switch (readChar(10))
 #endif
         {
         case CAN:
@@ -421,7 +421,7 @@ DSERIAL_PRINTLN(F("zsendfdata - error - 1"));
           goto gotack;
         case XOFF:              /* Wait a while for an XON */
         case XOFF |0x80:
-          readline(100);
+          readChar(1000);
         }
     }
 #endif
@@ -474,7 +474,7 @@ DSERIAL_PRINTLN(n);
 #ifdef SV
       switch (checked)
 #else
-        switch (readline(1))
+        switch (readChar(10))
 #endif
         {
         case CAN:
@@ -490,7 +490,7 @@ DSERIAL_PRINTLN(n);
           goto gotack;
         case XOFF:              /* Wait a while for an XON */
         case XOFF|0x80:
-          readline(100);
+          readChar(1000);
         default:
           ++junkcount;
         }
@@ -502,7 +502,7 @@ DSERIAL_PRINTLN(n);
 DSERIAL_PRINTLN("zsendfdata - 4");
 
 
-  for (;;) {
+  while (true) {
     stohdr(Txpos);
     zsbhdr(ZEOF, Txhdr);
     switch (getinsync(0)) {
@@ -539,7 +539,7 @@ int ZModemSend::getinsync(int flag)
 {
   int c;
 
-  for (;;) {
+  while (true) {
     if (Test) {
 DSERIAL_PRINTLN(F("***** Signal Caught *****"));
       Rxpos = 0;
@@ -615,7 +615,7 @@ void ZModemSend::sendzrqinit(void)
 
 /* Say "bibi" to the receiver, try to do it cleanly */
 void ZModemSend::saybibi() {
-  for (;;) {
+  while (true) {
     stohdr(0L);             /* CAF Was zsbhdr - minor change */
     sendHexHeader(ZFIN, Txhdr);    /*  to make debugging easier */
     switch (zgethdr(Rxhdr, 0)) {

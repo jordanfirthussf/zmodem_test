@@ -219,7 +219,7 @@
 //       }
 //     }
 //     else {
-//       for (;;) {
+//       while (true) {
 //         if (wcrxpn(secbuf)== ERROR) {
 // DSERIAL_PRINTLN(F("fubar 3"));
 //           goto fubar;
@@ -788,7 +788,7 @@
 // {
 //   int c;
 //
-//   for (;;) {
+//   while (true) {
 //     switch (c = rzfile()) {
 //     case ZModem::ZEOF:
 //     case ZModem::ZSKIP:
@@ -826,7 +826,7 @@
 //   n = 20;
 // //  rxbytes = 0l;
 //
-//   for (;;) {
+//   while (true) {
 // #ifdef SEGMENTS
 //     chinseg = 0;
 // #endif
