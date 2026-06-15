@@ -205,7 +205,7 @@ protected:
     static Stream *_serial;
 
     // function definitions
-    static int zdlread();
+    static int ZDLEDecode();
     static int readChar(unsigned long timeout);
     static int zGetHex();
 

@@ -192,7 +192,7 @@ int ZModem::zrdata(char *buf,int length)
     Rxcount = 0;  
     end = buf + length;
     while (buf <= end) {
-      if ((c = zdlread()) & ~255) {
+      if ((c = ZDLEDecode()) & ~255) {
   crcfoo32:
         switch (c) {
         case GOTCRCE:
@@ -202,16 +202,16 @@ int ZModem::zrdata(char *buf,int length)
           d = c;  
           c &= 255;
           crc32.update(c);
-          if ((c = zdlread()) & ~255)
+          if ((c = ZDLEDecode()) & ~255)
             goto crcfoo32;
           crc32.update(c);
-          if ((c = zdlread()) & ~255)
+          if ((c = ZDLEDecode()) & ~255)
             goto crcfoo32;
           crc32.update(c);
-          if ((c = zdlread()) & ~255)
+          if ((c = ZDLEDecode()) & ~255)
             goto crcfoo32;
           crc32.update(c);
-          if ((c = zdlread()) & ~255)
+          if ((c = ZDLEDecode()) & ~255)
             goto crcfoo32;
           crc32.update(c);
           if (crc32.get() != 0xDEBB20E3) {
@@ -245,7 +245,7 @@ int ZModem::zrdata(char *buf,int length)
     crc16.begin(0);
     end = buf + length;
     while (buf <= end) {
-      if ((c = zdlread()) & ~255) {
+      if ((c = ZDLEDecode()) & ~255) {
   crcfoo16:
         switch (c) {
         case GOTCRCE:
@@ -253,10 +253,10 @@ int ZModem::zrdata(char *buf,int length)
         case GOTCRCQ:
         case GOTCRCW:
           crc16.update((d=c)&255);
-          if ((c = zdlread()) & ~255)
+          if ((c = ZDLEDecode()) & ~255)
             goto crcfoo16;
           crc16.update(c);
-          if ((c = zdlread()) & ~255)
+          if ((c = ZDLEDecode()) & ~255)
             goto crcfoo16;
           crc16.update(c);
           if (crc16.get() & 0xFFFF) {
@@ -571,64 +571,54 @@ int ZModem::zGetHex(void)
  * Read a byte, checking for ZMODEM escape encoding
  *  including CAN*5 which represents a quick abort
  */
-int ZModem::zdlread(){
+int ZModem::ZDLEDecode() {
   int c;
+  int numCANs = 0;
 
-again:
-  // Quick check for non control characters
-  if ((c = readChar(Rxtimeout/10)) < 0)
-    return c;
+  // timeout
+  if ((c = readChar(Rxtimeout/10)) < 0) {
+    return c; }
+  if (c != CAN) { // note: CAN==ZDLE
+    return c; }
 
-  switch (c) {
+  // else first char read was CAN/ZDLE
+  numCANs += 1;
 
-    // if
-    case ZDLE:
-      break;
-    case XOFF:
-    case 0x93: // (XOFF|0x80)
-    case XON:
-    case 0x91: // (XON|0x80)
-      goto again;
-    default:
-      if (Zctlesc && !(c & 0x60)) {
-        goto again;
-      }
+  while (numCANs < 5) {
+    switch (c = readChar(Rxtimeout/10)) {
+    case ERROR:
+    case TIMEOUT:
       return c;
-  }
-again2:
-  if ((c = readChar(Rxtimeout/10)) < 0)
-    return c;
-  if (c == CAN && (c = readChar(Rxtimeout/10)) < 0)
-    return c;
-  if (c == CAN && (c = readChar(Rxtimeout/10)) < 0)
-    return c;
-  if (c == CAN && (c = readChar(Rxtimeout/10)) < 0)
-    return c;
+    case CAN:
+      numCANs++;
+      continue; // next while loop iteration
+    default:
+      break; // leave switch
+      }
+    break; // leave while loop
+  } // end while
+
+  if (numCANs >= 5) {return GOTCAN;}
+
+  // else, there was at ZDLE/CAN
+  // ZDLE decode the next char
+
   switch (c) {
-  case CAN:
-    return GOTCAN;
-  case ZCRCE:
-  case ZCRCG:
-  case ZCRCQ:
-  case ZCRCW:
-    return (c | GOTOR);
-  case ZRUB0:
-    return 0x7f;
-  case ZRUB1:
-    return 255;
-  case XOFF:
-  case 0x93:
-  case XON:
-  case 0x91:
-    goto again2;
-  default:
-    if (Zctlesc && ! (c & 0x60)) {
-      goto again2;
-    }
-    if ((c & 0x60) ==  0x40)
-      return (c ^ 0x40);
-    break;
-  }
+    case ZCRCE:
+    case ZCRCG:
+    case ZCRCQ:
+    case ZCRCW:
+      return (c | GOTOR);
+    case ZRUB0:
+      return 0x7f;
+    case ZRUB1:
+      return 0xff;
+    default:
+      if ((c & 0x60) ==  0x40)
+        return (c ^ 0x40);
+      break;
+  } // end switch
+
   if (Verbose>1)
     zperr("Bad escape sequence %x", c);
   return ERROR;
@@ -688,22 +678,39 @@ long ZModem::rclhdr(char *hdr)
 }
 #endif
 
-
+/// @brief reads next valid character from serial port;
+///        completes partial ZDLE decoding: ignores serial control codes
+/// @param timeout (ms)
+/// @return -2 for timeout
+/// @return nothing for XON, XOFF, or high bit equivalents
+///         (ignores serial control codes and reads next)
+/// @return nothing for control code if ESCCTL is true
+/// @return int (char) otherwise
 int ZModem::readChar(unsigned long timeout) {
   timeout+= millis();
+
+  // timeout
   while(_serial->available() < 1) {
     if(millis() > timeout ) {
       return(TIMEOUT);
-    }
-  }
-  const unsigned char c = _serial->read();
-  return(c);
-}
+    }  }
 
-
-
-
-
+  // read char
+  // ignore serial control characters
+  while (millis() < timeout){
+    switch (const unsigned char c = _serial->read()) {
+      default:
+        if (Zctlesc && !(c & 0x60) )  {continue;}
+        else {return c;}
+      case XON:
+      case XOFF:
+      case 0x91: // (XON|0x80): XON with high bit set
+      case 0x93: // (XOFF|0x80): XOFF with high bit set
+        continue;
+    } // end switch
+  } // end loop
+  return ERROR;
+} // end readChar()
 
 
 // definitions for CRC16 functions
