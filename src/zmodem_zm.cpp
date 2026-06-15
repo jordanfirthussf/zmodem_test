@@ -492,7 +492,7 @@ void ZModem::zputhex(int c)
  *  Escape XON, XOFF. Escape CR following @ (Telnet net escape)
  */
 void ZModem::zSendCharCRC(char c) {
-  zSendCharCRC(c); // turn into int
+  zSendCharCRC((uint8_t)c); // turn into int
 }
 
 void ZModem::zSendCharCRC(uint8_t c) {
@@ -509,7 +509,7 @@ void ZModem::zSendCharCRC(uint8_t c) {
 
 
 void ZModem::zSendChar(char c) {
-  zSendChar(c); // turn into int
+  zSendChar((uint8_t)c); // turn into int
 }
 
 void ZModem::zSendChar(uint8_t c)
